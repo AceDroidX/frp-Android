@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/app_name"
+            android:id="@+id/textView4"
+            android:layout_above="@+id/textView_version" android:layout_centerHorizontal="true"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Vnull"
+            android:id="@+id/textView_version" android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="By AceDroidX"
+            android:id="@+id/textView_copyright"
+            android:layout_below="@+id/textView_version" android:layout_centerHorizontal="true"/>
+    <TextView
+            android:text="https://acedroidx.github.io/?a=null"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/textView_website"
+            android:layout_below="@+id/textView_copyright" android:layout_centerHorizontal="true"/>
+</RelativeLayout>
