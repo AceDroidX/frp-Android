@@ -4,13 +4,12 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.util.*
 
 class ShellService : Service() {
@@ -57,7 +56,11 @@ class ShellService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        p = Runtime.getRuntime().exec("./$filename -c config.ini", arrayOf(""), this.filesDir)
+        val ainfo =
+            packageManager.getApplicationInfo(packageName, PackageManager.GET_SHARED_LIBRARY_FILES)
+        Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
+        p = Runtime.getRuntime()
+            .exec("${ainfo.nativeLibraryDir}/${filename} -c config.ini", arrayOf(""), this.filesDir)
         Toast.makeText(this, "已启动服务", Toast.LENGTH_SHORT).show()
         startForeground(1, showMotification());
         return START_NOT_STICKY

@@ -11,16 +11,14 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
-import androidx.core.app.NotificationCompat
 import java.io.File
-import kotlin.math.log
 
 
 class MainActivity : AppCompatActivity() {
-    val filename = "frpc_0.34.3_linux_arm64"
+    val filename = "frpc"
+    val frpver = "0.41.0"
     val logname = "frpc.log"
     val configname = "config.ini"
 
@@ -51,7 +49,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        checkBinary()
+        val versionName = packageManager.getPackageInfo(packageName, 0).versionName
+        val titleText = findViewById<TextView>(R.id.titleText)
+        titleText.text = "frp for Android - ${versionName}/${frpver}"
+
         checkConfig()
         createBGNotificationChannel()
 
@@ -104,19 +105,6 @@ class MainActivity : AppCompatActivity() {
             logTextView.text = mRespBuff.toString()
         } else {
             logTextView.text = "无日志"
-        }
-    }
-
-    fun checkBinary() {
-        val files: Array<String> = this.fileList()
-        Log.d("adx", files.joinToString(","))
-        if (!files.contains(filename)) {
-            val assetmanager = resources.assets
-            this.openFileOutput(filename, Context.MODE_PRIVATE).use {
-                it.write(assetmanager.open((filename)).readBytes())
-            }
-            val file = File(this.filesDir.toString() + "/$filename")
-            file.setExecutable(true)
         }
     }
 
