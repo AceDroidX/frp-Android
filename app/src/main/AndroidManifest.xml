@@ -18,17 +18,17 @@
 
         <meta-data
             android:name="Website"
-            android:value="https://acedroidx.github.io/?a=frp"/>
+            android:value="https://acedroidx.github.io/?a=frp" />
 
         <service
             android:name=".ShellService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
-            android:launchMode="singleInstance"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

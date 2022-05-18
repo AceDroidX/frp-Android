@@ -17,8 +17,8 @@ import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
-    val filename = "frpc"
-    val frpver = "0.41.0"
+    val filename = "libfrpc.so"
+    val frpver = "0.42.0"
     val logname = "frpc.log"
     val configname = "config.ini"
 

@@ -59,8 +59,19 @@ class ShellService : Service() {
         val ainfo =
             packageManager.getApplicationInfo(packageName, PackageManager.GET_SHARED_LIBRARY_FILES)
         Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
-        p = Runtime.getRuntime()
-            .exec("${ainfo.nativeLibraryDir}/${filename} -c config.ini", arrayOf(""), this.filesDir)
+        try {
+            p = Runtime.getRuntime()
+                .exec(
+                    "${ainfo.nativeLibraryDir}/${filename} -c config.ini",
+                    arrayOf(""),
+                    this.filesDir
+                )
+        } catch (e: Exception) {
+            Log.e("adx", e.stackTraceToString())
+            Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
+            stopSelf()
+            return START_NOT_STICKY
+        }
         Toast.makeText(this, "已启动服务", Toast.LENGTH_SHORT).show()
         startForeground(1, showMotification());
         return START_NOT_STICKY
@@ -75,7 +86,7 @@ class ShellService : Service() {
     private fun showMotification(): Notification {
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
-                PendingIntent.getActivity(this, 0, notificationIntent, 0)
+                PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
             }
         val notification: Notification = NotificationCompat.Builder(this, "shell_bg")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
