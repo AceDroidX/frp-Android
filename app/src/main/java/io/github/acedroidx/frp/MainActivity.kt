@@ -1,6 +1,8 @@
 package io.github.acedroidx.frp
 
-import android.app.*
+import android.app.ActivityManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -23,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     val configname = "config.ini"
 
     private lateinit var state_switch: SwitchCompat
+    private lateinit var auto_start_switch: SwitchCompat
 
     private lateinit var mService: ShellService
     private var mBound: Boolean = false
@@ -60,6 +63,15 @@ class MainActivity : AppCompatActivity() {
         state_switch = findViewById<SwitchCompat>(R.id.state_switch)
         state_switch.isChecked = mBound
         state_switch.setOnCheckedChangeListener { buttonView, isChecked -> if (isChecked) (startShell()) else (stopShell()) }
+        val editor = getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)
+        auto_start_switch = findViewById<SwitchCompat>(R.id.auto_start_switch)
+        auto_start_switch.isChecked = editor.getBoolean("auto_start", false)
+        if (auto_start_switch.isChecked) (startShell())
+        auto_start_switch.setOnCheckedChangeListener { buttonView, isChecked ->
+            val editor = editor.edit()
+            editor.putBoolean("auto_start", isChecked)
+            editor.apply();
+        }
         if (mBound) {
             val intent = Intent(this, ShellService::class.java)
             bindService(intent, connection, Context.BIND_AUTO_CREATE)
@@ -151,8 +163,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isServiceRunning(serviceClass: Class<*>): Boolean {
-        val manager =
-            getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         for (service in manager.getRunningServices(Int.MAX_VALUE)) {
             if (serviceClass.name == service.service.className) {
                 return true
