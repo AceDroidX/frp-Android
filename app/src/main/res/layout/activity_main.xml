@@ -30,6 +30,12 @@
                 android:layout_height="wrap_content"
                 android:text="切换开关" />
 
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/auto_start_switch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="开机自启动" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -46,6 +52,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="关于" />
+
             </LinearLayout>
 
             <Space
