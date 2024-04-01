@@ -23,11 +23,6 @@ import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
-    val filename = "libfrpc.so"
-    val frpver = "0.56.0"
-    val logname = "frpc.log"
-    val configname = "config.ini"
-
     private lateinit var state_switch: SwitchCompat
     private lateinit var auto_start_switch: SwitchCompat
 
@@ -58,7 +53,7 @@ class MainActivity : AppCompatActivity() {
 
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName
         val titleText = findViewById<TextView>(R.id.titleText)
-        titleText.text = "frp for Android - ${versionName}/${frpver}"
+        titleText.text = "frp for Android - ${versionName}/${BuildConfig.FrpVersion}"
 
         checkConfig()
         checkNotificationPermission()
@@ -100,7 +95,7 @@ class MainActivity : AppCompatActivity() {
         }
         val deleteButton = findViewById<Button>(R.id.deleteButton)
         deleteButton.setOnClickListener {
-            val logfile = File(this.filesDir.toString() + "/$logname")
+            val logfile = File(this.filesDir.toString() + "/${BuildConfig.LogFileName}")
             Log.d("adx", logfile.absoluteFile.toString())
             logfile.delete()
             readLog()
@@ -110,8 +105,8 @@ class MainActivity : AppCompatActivity() {
     fun readLog() {
         val files: Array<String> = this.fileList()
         val logTextView = findViewById<TextView>(R.id.logTextView)
-        if (files.contains(logname)) {
-            val mReader = this.openFileInput(logname).bufferedReader()
+        if (files.contains(BuildConfig.LogFileName)) {
+            val mReader = this.openFileInput(BuildConfig.LogFileName).bufferedReader()
             val mRespBuff = StringBuffer()
             val buff = CharArray(1024)
             var ch = 0
@@ -128,17 +123,17 @@ class MainActivity : AppCompatActivity() {
     fun checkConfig() {
         val files: Array<String> = this.fileList()
         Log.d("adx", files.joinToString(","))
-        if (!files.contains(configname)) {
+        if (!files.contains(BuildConfig.ConfigFileName)) {
             val assetmanager = resources.assets
-            this.openFileOutput(configname, Context.MODE_PRIVATE).use {
-                it.write(assetmanager.open((configname)).readBytes())
+            this.openFileOutput(BuildConfig.ConfigFileName, Context.MODE_PRIVATE).use {
+                it.write(assetmanager.open((BuildConfig.ConfigFileName)).readBytes())
             }
         }
     }
 
     private fun startShell() {
         val intent = Intent(this, ShellService::class.java)
-        intent.putExtra("filename", filename)
+        intent.putExtra("filename", BuildConfig.FrpcFileName)
         startService(intent)
         // Bind to LocalService
         bindService(intent, connection, Context.BIND_AUTO_CREATE)

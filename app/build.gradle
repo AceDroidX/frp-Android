@@ -32,6 +32,11 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         signingConfig signingConfigs.AceKeystore
+
+        buildConfigField("String", "FrpVersion", '"0.56.0"')
+        buildConfigField("String", "FrpcFileName", '"libfrpc.so"')
+        buildConfigField("String", "LogFileName", '"frpc.log"')
+        buildConfigField("String", "ConfigFileName", '"config.ini"')
     }
 
     buildTypes {

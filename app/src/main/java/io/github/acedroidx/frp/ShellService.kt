@@ -62,7 +62,7 @@ class ShellService : Service() {
         Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
         try {
             p = Runtime.getRuntime().exec(
-                "${ainfo.nativeLibraryDir}/${filename} -c config.ini", arrayOf(""), this.filesDir
+                "${ainfo.nativeLibraryDir}/${filename} -c ${BuildConfig.ConfigFileName}", arrayOf(""), this.filesDir
             )
         } catch (e: Exception) {
             Log.e("adx", e.stackTraceToString())
