@@ -19,7 +19,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
-import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
@@ -94,28 +93,17 @@ class MainActivity : AppCompatActivity() {
         }
         val deleteButton = findViewById<Button>(R.id.deleteButton)
         deleteButton.setOnClickListener {
-            val logfile = File(this.filesDir.toString() + "/${BuildConfig.LogFileName}")
-            Log.d("adx", logfile.absoluteFile.toString())
-            logfile.delete()
+            mService.clearOutput()
             readLog()
         }
     }
 
     fun readLog() {
-        val files: Array<String> = this.fileList()
         val logTextView = findViewById<TextView>(R.id.logTextView)
-        if (files.contains(BuildConfig.LogFileName)) {
-            val mReader = this.openFileInput(BuildConfig.LogFileName).bufferedReader()
-            val mRespBuff = StringBuffer()
-            val buff = CharArray(1024)
-            var ch = 0
-            while (mReader.read(buff).also { ch = it } != -1) {
-                mRespBuff.append(buff, 0, ch)
-            }
-            mReader.close()
-            logTextView.text = mRespBuff.toString()
+        if (mBound) {
+            logTextView.text = mService.getOutput()
         } else {
-            logTextView.text = "无日志"
+            Log.w("adx", "readLog mBound==null")
         }
     }
 

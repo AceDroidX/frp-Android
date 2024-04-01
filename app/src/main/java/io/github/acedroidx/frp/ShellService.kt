@@ -11,11 +11,20 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import java.util.*
+import java.io.File
+import java.util.Random
+
 
 class ShellService : Service() {
-    var p: Process? = null
+    private var process_thread: Thread? = null
+    private val outputBuilder = StringBuilder()
+    fun getOutput(): String {
+        return outputBuilder.toString()
+    }
 
+    fun clearOutput() {
+        outputBuilder.clear()
+    }
 
     // Binder given to clients
     private val binder = LocalBinder()
@@ -42,7 +51,7 @@ class ShellService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         var filename = ""
-        if (p != null) {
+        if (process_thread != null) {
             Log.w("adx", "process isn't null,service won't start")
             Toast.makeText(this, "process isn't null,service won't start", Toast.LENGTH_SHORT)
                 .show()
@@ -61,8 +70,10 @@ class ShellService : Service() {
             packageManager.getApplicationInfo(packageName, PackageManager.GET_SHARED_LIBRARY_FILES)
         Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
         try {
-            p = Runtime.getRuntime().exec(
-                "${ainfo.nativeLibraryDir}/${filename} -c ${BuildConfig.ConfigFileName}", arrayOf(""), this.filesDir
+            runCommand(
+                "${ainfo.nativeLibraryDir}/${filename} -c ${BuildConfig.ConfigFileName}",
+                arrayOf(""),
+                this.filesDir
             )
         } catch (e: Exception) {
             Log.e("adx", e.stackTraceToString())
@@ -76,9 +87,13 @@ class ShellService : Service() {
     }
 
     override fun onDestroy() {
-        p?.destroy()
-        p = null
+        process_thread?.interrupt()
         Toast.makeText(this, "已关闭frp服务", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun runCommand(command: String, envp: Array<String>, dir: File) {
+        process_thread = ShellThread(command, envp, dir) { outputBuilder.append(it + "\n") }
+        process_thread?.start()
     }
 
     private fun showMotification(): Notification {
