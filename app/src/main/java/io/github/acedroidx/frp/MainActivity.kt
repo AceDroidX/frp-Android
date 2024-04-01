@@ -1,5 +1,6 @@
 package io.github.acedroidx.frp
 
+import android.Manifest
 import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,20 +8,23 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
     val filename = "libfrpc.so"
-    val frpver = "0.42.0"
+    val frpver = "0.56.0"
     val logname = "frpc.log"
     val configname = "config.ini"
 
@@ -57,6 +61,7 @@ class MainActivity : AppCompatActivity() {
         titleText.text = "frp for Android - ${versionName}/${frpver}"
 
         checkConfig()
+        checkNotificationPermission()
         createBGNotificationChannel()
 
         mBound = isServiceRunning(ShellService::class.java)
@@ -143,6 +148,31 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, ShellService::class.java)
         unbindService(connection)
         stopService(intent)
+    }
+
+    private fun checkNotificationPermission() {
+        val requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission is granted. Continue the action or workflow in your
+                // app.
+            } else {
+                // Explain to the user that the feature is unavailable because the
+                // feature requires a permission that the user has denied. At the
+                // same time, respect the user's decision. Don't link to system
+                // settings in an effort to convince the user to change their
+                // decision.
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     private fun createBGNotificationChannel() {

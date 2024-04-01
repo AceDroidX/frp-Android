@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
@@ -60,12 +61,9 @@ class ShellService : Service() {
             packageManager.getApplicationInfo(packageName, PackageManager.GET_SHARED_LIBRARY_FILES)
         Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
         try {
-            p = Runtime.getRuntime()
-                .exec(
-                    "${ainfo.nativeLibraryDir}/${filename} -c config.ini",
-                    arrayOf(""),
-                    this.filesDir
-                )
+            p = Runtime.getRuntime().exec(
+                "${ainfo.nativeLibraryDir}/${filename} -c config.ini", arrayOf(""), this.filesDir
+            )
         } catch (e: Exception) {
             Log.e("adx", e.stackTraceToString())
             Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
@@ -88,13 +86,16 @@ class ShellService : Service() {
             Intent(this, MainActivity::class.java).let { notificationIntent ->
                 PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
             }
-        val notification: Notification = NotificationCompat.Builder(this, "shell_bg")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("frp后台服务")
+        val notification = NotificationCompat.Builder(this, "shell_bg")
+            .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("frp后台服务")
             .setContentText("已启动frp")
             //.setTicker("test")
             .setContentIntent(pendingIntent)
-            .build()
-        return notification
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return notification.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
+                .build()
+        } else {
+            return notification.build()
+        }
     }
 }

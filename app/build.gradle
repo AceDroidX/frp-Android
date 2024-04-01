@@ -8,6 +8,10 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
+    buildFeatures {
+        buildConfig = true
+    }
+
     signingConfigs {
         AceKeystore {
             keyAlias keystoreProperties['keyAlias']
@@ -16,15 +20,14 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }
-    compileSdkVersion 32
-    buildToolsVersion "33.0.0-rc4"
 
     defaultConfig {
         applicationId "io.github.acedroidx.frp"
         minSdkVersion 23
-        targetSdkVersion 32
-        versionCode 3
-        versionName "1.0.2"
+        targetSdkVersion 34
+        compileSdk 34
+        versionCode 4
+        versionName "1.0.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -42,11 +45,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = '17'
     }
     packagingOptions {
         jniLibs {
@@ -57,7 +60,7 @@ android {
         abi {
             enable true
             reset()
-            include "arm64-v8a", "x86_64"
+            include "arm64-v8a", "x86_64", "armeabi-v7a"
             universalApk true
         }
     }
@@ -66,11 +69,11 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.4.1'
-    implementation 'com.google.android.material:material:1.6.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
