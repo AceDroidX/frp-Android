@@ -66,7 +66,6 @@ class MainActivity : AppCompatActivity() {
         val editor = getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)
         auto_start_switch = findViewById<SwitchCompat>(R.id.auto_start_switch)
         auto_start_switch.isChecked = editor.getBoolean("auto_start", false)
-        if (auto_start_switch.isChecked) (startShell())
         auto_start_switch.setOnCheckedChangeListener { buttonView, isChecked ->
             val editor = editor.edit()
             editor.putBoolean("auto_start", isChecked)

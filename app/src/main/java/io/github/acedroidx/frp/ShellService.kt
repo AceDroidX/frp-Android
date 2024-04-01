@@ -70,7 +70,7 @@ class ShellService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        Toast.makeText(this, "已启动服务", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "已启动frp服务", Toast.LENGTH_SHORT).show()
         startForeground(1, showMotification());
         return START_NOT_STICKY
     }
@@ -78,7 +78,7 @@ class ShellService : Service() {
     override fun onDestroy() {
         p?.destroy()
         p = null
-        Toast.makeText(this, "已关闭服务", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "已关闭frp服务", Toast.LENGTH_SHORT).show()
     }
 
     private fun showMotification(): Notification {
