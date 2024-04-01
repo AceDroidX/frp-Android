@@ -61,6 +61,7 @@ android {
             universalApk true
         }
     }
+    namespace 'io.github.acedroidx.frp'
 }
 
 dependencies {
