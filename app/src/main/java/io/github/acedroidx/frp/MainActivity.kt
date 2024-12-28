@@ -1,7 +1,6 @@
 package io.github.acedroidx.frp
 
 import android.Manifest
-import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ComponentName
@@ -19,6 +18,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
@@ -37,6 +38,12 @@ class MainActivity : AppCompatActivity() {
             mService = binder.getService()
             mBound = true
             state_switch.isChecked = mService.getIsRunning()
+            mService.lifecycleScope.launch {
+                mService.logText.collect {
+                    val logTextView = findViewById<TextView>(R.id.logTextView)
+                    logTextView.text = it
+                }
+            }
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -93,23 +100,9 @@ class MainActivity : AppCompatActivity() {
         }
         val aboutButton = findViewById<Button>(R.id.aboutButton)
         aboutButton.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
-        val refreshButton = findViewById<Button>(R.id.refreshButton)
-        refreshButton.setOnClickListener {
-            readLog()
-        }
         val deleteButton = findViewById<Button>(R.id.deleteButton)
         deleteButton.setOnClickListener {
-            mService.clearOutput()
-            readLog()
-        }
-    }
-
-    fun readLog() {
-        val logTextView = findViewById<TextView>(R.id.logTextView)
-        if (mBound) {
-            logTextView.text = mService.getOutput()
-        } else {
-            Log.w("adx", "readLog mBound==null")
+            mService.clearLog()
         }
     }
 

@@ -5,7 +5,6 @@
     <string name="configButton">设置</string>
     <string name="aboutButton">关于</string>
     <string name="frp_log">frp日志</string>
-    <string name="refreshButton">刷新</string>
     <string name="deleteButton">清除</string>
     <string name="no_log">无日志</string>
     <string name="saveConfigButton">保存</string>

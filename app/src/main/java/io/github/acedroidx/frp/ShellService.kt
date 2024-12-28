@@ -2,7 +2,6 @@ package io.github.acedroidx.frp
 
 import android.app.Notification
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
@@ -11,19 +10,20 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LifecycleService
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.io.File
 import java.util.Random
 
 
-class ShellService : Service() {
+class ShellService : LifecycleService() {
     private var process_thread: Thread? = null
-    private val outputBuilder = StringBuilder()
-    fun getOutput(): String {
-        return outputBuilder.toString()
-    }
+    private val _logText = MutableStateFlow("")
+    val logText: StateFlow<String> = _logText
 
-    fun clearOutput() {
-        outputBuilder.clear()
+    fun clearLog() {
+        _logText.value = ""
     }
 
     fun getIsRunning(): Boolean {
@@ -50,10 +50,12 @@ class ShellService : Service() {
     }
 
     override fun onBind(intent: Intent): IBinder {
+        super.onBind(intent)
         return binder
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         when (intent?.action) {
             ShellServiceAction.START -> {
                 if (process_thread != null) {
@@ -108,13 +110,14 @@ class ShellService : Service() {
     }
 
     override fun onDestroy() {
+        super.onDestroy()
         if (process_thread != null) Log.w("adx", "onDestroy: process_thread is not null")
         process_thread?.interrupt()
         process_thread = null
     }
 
     private fun runCommand(command: String, envp: Array<String>, dir: File) {
-        process_thread = ShellThread(command, envp, dir) { outputBuilder.append(it + "\n") }
+        process_thread = ShellThread(command, envp, dir) { _logText.value += it + "\n" }
         process_thread?.start()
     }
 

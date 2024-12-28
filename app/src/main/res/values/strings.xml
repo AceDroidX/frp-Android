@@ -6,7 +6,6 @@
     <string name="configButton">Config</string>
     <string name="aboutButton">About</string>
     <string name="frp_log">frp Log</string>
-    <string name="refreshButton">Refresh</string>
     <string name="deleteButton">Clear</string>
     <string name="no_log">No Log</string>
     <string name="saveConfigButton">Save</string>
