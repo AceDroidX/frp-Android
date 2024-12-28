@@ -36,12 +36,11 @@ class MainActivity : AppCompatActivity() {
             val binder = service as ShellService.LocalBinder
             mService = binder.getService()
             mBound = true
-            state_switch.isChecked = true
+            state_switch.isChecked = mService.getIsRunning()
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             mBound = false
-            state_switch.isChecked = false
         }
     }
 
@@ -58,24 +57,31 @@ class MainActivity : AppCompatActivity() {
         checkNotificationPermission()
         createBGNotificationChannel()
 
-        mBound = isServiceRunning(ShellService::class.java)
         state_switch = findViewById<SwitchCompat>(R.id.state_switch)
-        state_switch.isChecked = mBound
-        state_switch.setOnCheckedChangeListener { buttonView, isChecked -> if (isChecked) (startShell()) else (stopShell()) }
-        val editor = getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)
+        state_switch.isChecked = false
+        state_switch.setOnClickListener { if (state_switch.isChecked) (startShell()) else (stopShell()) }
+        val preferences = getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)
         auto_start_switch = findViewById<SwitchCompat>(R.id.auto_start_switch)
-        auto_start_switch.isChecked = editor.getBoolean("auto_start", false)
-        auto_start_switch.setOnCheckedChangeListener { buttonView, isChecked ->
-            val editor = editor.edit()
+        auto_start_switch.isChecked = preferences.getBoolean("auto_start", false)
+        auto_start_switch.setOnCheckedChangeListener { _, isChecked ->
+            val editor = preferences.edit()
             editor.putBoolean("auto_start", isChecked)
             editor.apply();
         }
-        if (mBound) {
+        if (!mBound) {
             val intent = Intent(this, ShellService::class.java)
             bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
 
         setListener()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (mBound) {
+            unbindService(connection)
+            mBound = false
+        }
     }
 
     private fun setListener() {
@@ -120,16 +126,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun startShell() {
         val intent = Intent(this, ShellService::class.java)
+        intent.setAction(ShellServiceAction.START)
         intent.putExtra("filename", BuildConfig.FrpcFileName)
         startService(intent)
-        // Bind to LocalService
-        bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
 
     private fun stopShell() {
         val intent = Intent(this, ShellService::class.java)
-        unbindService(connection)
-        stopService(intent)
+        intent.setAction(ShellServiceAction.STOP)
+        startService(intent)
     }
 
     private fun checkNotificationPermission() {
@@ -172,15 +177,5 @@ class MainActivity : AppCompatActivity() {
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
-    }
-
-    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
-        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
-            if (serviceClass.name == service.service.className) {
-                return true
-            }
-        }
-        return false
     }
 }

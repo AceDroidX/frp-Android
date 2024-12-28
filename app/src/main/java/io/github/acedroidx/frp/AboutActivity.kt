@@ -43,7 +43,6 @@ class AboutActivity : AppCompatActivity() {
         get() {
             val packageManager = packageManager
             val packInfo = packageManager?.getPackageInfo(packageName, 0)
-            Log.d("wxxDebugAbout", packInfo!!.versionName)
-            return packInfo.versionName
+            return packInfo?.versionName ?: ""
         }
 }

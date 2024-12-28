@@ -26,6 +26,10 @@ class ShellService : Service() {
         outputBuilder.clear()
     }
 
+    fun getIsRunning(): Boolean {
+        return process_thread != null
+    }
+
     // Binder given to clients
     private val binder = LocalBinder()
 
@@ -50,45 +54,61 @@ class ShellService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        var filename = ""
-        if (process_thread != null) {
-            Log.w("adx", "process isn't null,service won't start")
-            Toast.makeText(this, "process isn't null,service won't start", Toast.LENGTH_SHORT)
-                .show()
-            return START_NOT_STICKY
+        when (intent?.action) {
+            ShellServiceAction.START -> {
+                if (process_thread != null) {
+                    Log.w("adx", "process isn't null,service won't start")
+                    Toast.makeText(
+                        this, "process isn't null,service won't start", Toast.LENGTH_SHORT
+                    ).show()
+                    return START_NOT_STICKY
+                }
+                val filename = intent.extras?.getString("filename")
+                if (filename == null) {
+                    Log.w("adx", "filename is null,service won't start")
+                    Toast.makeText(this, "filename is null,service won't start", Toast.LENGTH_SHORT)
+                        .show()
+                    return START_NOT_STICKY
+                }
+                val ainfo = packageManager.getApplicationInfo(
+                    packageName, PackageManager.GET_SHARED_LIBRARY_FILES
+                )
+                Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
+                try {
+                    runCommand(
+                        "${ainfo.nativeLibraryDir}/${filename} -c ${BuildConfig.ConfigFileName}",
+                        arrayOf(""),
+                        this.filesDir
+                    )
+                } catch (e: Exception) {
+                    Log.e("adx", e.stackTraceToString())
+                    Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+                Toast.makeText(this, "已启动frp服务", Toast.LENGTH_SHORT).show()
+                startForeground(1, showMotification());
+            }
+
+            ShellServiceAction.STOP -> {
+                process_thread?.interrupt()
+                process_thread = null
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION") stopForeground(true)
+                }
+                stopSelf()
+                Toast.makeText(this, "已关闭frp服务", Toast.LENGTH_SHORT).show()
+            }
         }
-        if (intent != null) {
-            filename = intent.extras?.get("filename") as String
-        } else {
-            filename = "Error:filename unknown!!!"
-            Log.e("adx", filename)
-            Toast.makeText(this, filename, Toast.LENGTH_LONG).show()
-            stopSelf()
-            return START_NOT_STICKY
-        }
-        val ainfo =
-            packageManager.getApplicationInfo(packageName, PackageManager.GET_SHARED_LIBRARY_FILES)
-        Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
-        try {
-            runCommand(
-                "${ainfo.nativeLibraryDir}/${filename} -c ${BuildConfig.ConfigFileName}",
-                arrayOf(""),
-                this.filesDir
-            )
-        } catch (e: Exception) {
-            Log.e("adx", e.stackTraceToString())
-            Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
-            stopSelf()
-            return START_NOT_STICKY
-        }
-        Toast.makeText(this, "已启动frp服务", Toast.LENGTH_SHORT).show()
-        startForeground(1, showMotification());
         return START_NOT_STICKY
     }
 
     override fun onDestroy() {
+        if (process_thread != null) Log.w("adx", "onDestroy: process_thread is not null")
         process_thread?.interrupt()
-        Toast.makeText(this, "已关闭frp服务", Toast.LENGTH_SHORT).show()
+        process_thread = null
     }
 
     private fun runCommand(command: String, envp: Array<String>, dir: File) {
