@@ -14,10 +14,10 @@ android {
 
     signingConfigs {
         AceKeystore {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
+            keyAlias System.getenv("KEY_ALIAS") ?: keystoreProperties['keyAlias']
+            keyPassword System.getenv("KEY_PASSWORD") ?: keystoreProperties['keyPassword']
+            storeFile System.getenv("STORE_FILE") ? file("../keystore.jks") : file(keystoreProperties['storeFile'])
+            storePassword System.getenv("STORE_PASSWORD") ?: keystoreProperties['storePassword']
         }
     }
 
