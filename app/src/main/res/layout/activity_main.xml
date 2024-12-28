@@ -14,13 +14,13 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/titleText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="frp for Android"
+                android:text="@string/frp_for_android"
                 android:textColor="?android:attr/textColorPrimary"
                 android:textSize="24sp" />
 
@@ -28,13 +28,13 @@
                 android:id="@+id/state_switch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="切换开关" />
+                android:text="@string/state_switch" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/auto_start_switch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="开机自启动" />
+                android:text="@string/auto_start_switch" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -45,13 +45,13 @@
                     android:id="@+id/configButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="设置" />
+                    android:text="@string/configButton" />
 
                 <Button
                     android:id="@+id/aboutButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="关于" />
+                    android:text="@string/aboutButton" />
 
             </LinearLayout>
 
@@ -63,7 +63,7 @@
                 android:id="@+id/textView5"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="frp日志"
+                android:text="@string/frp_log"
                 android:textColor="?android:attr/textColorPrimary" />
 
             <LinearLayout
@@ -75,13 +75,13 @@
                     android:id="@+id/refreshButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="刷新" />
+                    android:text="@string/refreshButton" />
 
                 <Button
                     android:id="@+id/deleteButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="清除" />
+                    android:text="@string/deleteButton" />
 
             </LinearLayout>
 
@@ -89,7 +89,7 @@
                 android:id="@+id/logTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="无日志"
+                android:text="@string/no_log"
                 android:textColor="?android:attr/textColorPrimary"
                 android:typeface="monospace" />
 

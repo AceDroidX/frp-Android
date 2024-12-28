@@ -86,7 +86,8 @@ class ShellService : Service() {
                     stopSelf()
                     return START_NOT_STICKY
                 }
-                Toast.makeText(this, "已启动frp服务", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.service_start_toast), Toast.LENGTH_SHORT)
+                    .show()
                 startForeground(1, showMotification());
             }
 
@@ -99,7 +100,8 @@ class ShellService : Service() {
                     @Suppress("DEPRECATION") stopForeground(true)
                 }
                 stopSelf()
-                Toast.makeText(this, "已关闭frp服务", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.service_stop_toast), Toast.LENGTH_SHORT)
+                    .show()
             }
         }
         return START_NOT_STICKY
@@ -122,8 +124,9 @@ class ShellService : Service() {
                 PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
             }
         val notification = NotificationCompat.Builder(this, "shell_bg")
-            .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("frp后台服务")
-            .setContentText("已启动frp")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(getString(R.string.notification_title))
+            .setContentText(getString(R.string.notification_content))
             //.setTicker("test")
             .setContentIntent(pendingIntent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

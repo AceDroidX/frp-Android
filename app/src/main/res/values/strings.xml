@@ -1,3 +1,20 @@
 <resources>
-    <string name="app_name">frp</string>
+    <string name="app_name" translatable="false">frp</string>
+    <string name="frp_for_android" translatable="false">frp for Android</string>
+    <string name="state_switch">Enable frp</string>
+    <string name="auto_start_switch">Startup at Boot</string>
+    <string name="configButton">Config</string>
+    <string name="aboutButton">About</string>
+    <string name="frp_log">frp Log</string>
+    <string name="refreshButton">Refresh</string>
+    <string name="deleteButton">Clear</string>
+    <string name="no_log">No Log</string>
+    <string name="saveConfigButton">Save</string>
+    <string name="dontSaveConfigButton">Don\'t Save</string>
+    <string name="notification_channel_name">frp Background Service</string>
+    <string name="notification_channel_desc">frp Background Service Notification</string>
+    <string name="service_start_toast">frp Service Started</string>
+    <string name="service_stop_toast">frp Service Stopped</string>
+    <string name="notification_title">frp Background Service</string>
+    <string name="notification_content">frp Started</string>
 </resources>

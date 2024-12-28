@@ -166,8 +166,8 @@ class MainActivity : AppCompatActivity() {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "frp后台服务"
-            val descriptionText = "frp后台服务通知"
+            val name = getString(R.string.notification_channel_name)
+            val descriptionText = getString(R.string.notification_channel_desc)
             val importance = NotificationManager.IMPORTANCE_MIN
             val channel = NotificationChannel("shell_bg", name, importance).apply {
                 description = descriptionText

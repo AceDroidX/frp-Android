@@ -16,13 +16,13 @@
             android:id="@+id/saveConfigButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="保存" />
+            android:text="@string/saveConfigButton" />
 
         <Button
             android:id="@+id/dontSaveConfigButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="不保存" />
+            android:text="@string/dontSaveConfigButton" />
 
     </LinearLayout>
 
