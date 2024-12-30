@@ -16,4 +16,6 @@
     <string name="service_stop_toast">frp Service Stopped</string>
     <string name="notification_title">frp Background Service</string>
     <string name="notification_content">frp Started</string>
+    <string name="copy">Copy</string>
+    <string name="copied">Copied</string>
 </resources>

@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -40,7 +41,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -131,6 +134,7 @@ class MainActivity : ComponentActivity() {
     @Preview(showBackground = true)
     @Composable
     fun MainContent() {
+        val clipboardManager = LocalClipboardManager.current
         val isEnable by isEnable.collectAsStateWithLifecycle(false)
         val logText by logText.collectAsStateWithLifecycle("")
         Column(
@@ -182,6 +186,13 @@ class MainActivity : ComponentActivity() {
                     stringResource(R.string.frp_log), style = MaterialTheme.typography.titleLarge
                 )
                 Button(onClick = { mService.clearLog() }) { Text(stringResource(R.string.deleteButton)) }
+                Button(onClick = {
+                    clipboardManager.setText(AnnotatedString(logText))
+                    // Only show a toast for Android 12 and lower.
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) Toast.makeText(
+                        this@MainActivity, getString(R.string.copied), Toast.LENGTH_SHORT
+                    ).show()
+                }) { Text(stringResource(R.string.copy)) }
             }
             SelectionContainer {
                 Text(
