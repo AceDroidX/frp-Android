@@ -19,15 +19,13 @@ import java.util.Random
 
 class ShellService : LifecycleService() {
     private var process_thread: Thread? = null
+    private val _isRunning = MutableStateFlow(false)
+    val isRunning: StateFlow<Boolean> = _isRunning
     private val _logText = MutableStateFlow("")
     val logText: StateFlow<String> = _logText
 
     fun clearLog() {
         _logText.value = ""
-    }
-
-    fun getIsRunning(): Boolean {
-        return process_thread != null
     }
 
     // Binder given to clients
@@ -96,6 +94,7 @@ class ShellService : LifecycleService() {
             ShellServiceAction.STOP -> {
                 process_thread?.interrupt()
                 process_thread = null
+                _isRunning.value = false
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     stopForeground(STOP_FOREGROUND_REMOVE)
                 } else {
@@ -114,11 +113,13 @@ class ShellService : LifecycleService() {
         if (process_thread != null) Log.w("adx", "onDestroy: process_thread is not null")
         process_thread?.interrupt()
         process_thread = null
+        _isRunning.value = false
     }
 
     private fun runCommand(command: String, envp: Array<String>, dir: File) {
         process_thread = ShellThread(command, envp, dir) { _logText.value += it + "\n" }
         process_thread?.start()
+        _isRunning.value = true
     }
 
     private fun showMotification(): Notification {

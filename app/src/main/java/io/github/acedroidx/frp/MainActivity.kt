@@ -4,27 +4,60 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import android.widget.Button
-import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import io.github.acedroidx.frp.ui.theme.FrpTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 
-class MainActivity : AppCompatActivity() {
-    private lateinit var state_switch: SwitchCompat
-    private lateinit var auto_start_switch: SwitchCompat
+class MainActivity : ComponentActivity() {
+    private val isEnable = MutableStateFlow(false)
+    private val isStartup = MutableStateFlow(false)
+    private val logText = MutableStateFlow("")
+
+    private lateinit var preferences: SharedPreferences
 
     private lateinit var mService: ShellService
     private var mBound: Boolean = false
@@ -37,11 +70,15 @@ class MainActivity : AppCompatActivity() {
             val binder = service as ShellService.LocalBinder
             mService = binder.getService()
             mBound = true
-            state_switch.isChecked = mService.getIsRunning()
+
+            mService.lifecycleScope.launch {
+                mService.isRunning.collect {
+                    isEnable.value = it
+                }
+            }
             mService.lifecycleScope.launch {
                 mService.logText.collect {
-                    val logTextView = findViewById<TextView>(R.id.logTextView)
-                    logTextView.text = it
+                    logText.value = it
                 }
             }
         }
@@ -52,35 +89,108 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        val versionName = packageManager.getPackageInfo(packageName, 0).versionName
-        val titleText = findViewById<TextView>(R.id.titleText)
-        titleText.text = "frp for Android - ${versionName}/${BuildConfig.FrpVersion}"
 
         checkConfig()
         checkNotificationPermission()
         createBGNotificationChannel()
 
-        state_switch = findViewById<SwitchCompat>(R.id.state_switch)
-        state_switch.isChecked = false
-        state_switch.setOnClickListener { if (state_switch.isChecked) (startShell()) else (stopShell()) }
-        val preferences = getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)
-        auto_start_switch = findViewById<SwitchCompat>(R.id.auto_start_switch)
-        auto_start_switch.isChecked = preferences.getBoolean("auto_start", false)
-        auto_start_switch.setOnCheckedChangeListener { _, isChecked ->
-            val editor = preferences.edit()
-            editor.putBoolean("auto_start", isChecked)
-            editor.apply();
-        }
-        if (!mBound) {
-            val intent = Intent(this, ShellService::class.java)
-            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        preferences = getSharedPreferences("data", MODE_PRIVATE)
+        isStartup.value = preferences.getBoolean("auto_start", false)
+
+        enableEdgeToEdge()
+        setContent {
+            FrpTheme {
+                Scaffold(topBar = {
+                    TopAppBar(title = {
+                        Text("frp for Android - ${BuildConfig.VERSION_NAME}/${BuildConfig.FrpVersion}")
+                    })
+                }) { contentPadding ->
+                    // Screen content
+                    Box(
+                        modifier = Modifier
+                            .padding(contentPadding)
+                            .verticalScroll(rememberScrollState())
+                            .scrollable(orientation = Orientation.Vertical,
+                                state = rememberScrollableState { delta -> 0f })
+                    ) {
+                        MainContent()
+                    }
+                }
+            }
         }
 
-        setListener()
+        if (!mBound) {
+            val intent = Intent(this, ShellService::class.java)
+            bindService(intent, connection, BIND_AUTO_CREATE)
+        }
+    }
+
+    @Preview(showBackground = true)
+    @Composable
+    fun MainContent() {
+        val isEnable by isEnable.collectAsStateWithLifecycle(false)
+        val logText by logText.collectAsStateWithLifecycle("")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.state_switch))
+                Switch(checked = isEnable,
+                    onCheckedChange = { if (it) (startShell()) else (stopShell()) })
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.auto_start_switch))
+                Switch(checked = isStartup.collectAsStateWithLifecycle(false).value,
+                    onCheckedChange = {
+                        val editor = preferences.edit()
+                        editor.putBoolean("auto_start", it)
+                        editor.apply()
+                        isStartup.value = it
+                    })
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(onClick = {
+                    startActivity(Intent(this@MainActivity, ConfigActivity::class.java))
+                }) { Text(stringResource(R.string.configButton)) }
+                Button(onClick = {
+                    startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+                }) { Text(stringResource(R.string.aboutButton)) }
+            }
+            HorizontalDivider(thickness = 2.dp, modifier = Modifier.padding(vertical = 16.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    stringResource(R.string.frp_log), style = MaterialTheme.typography.titleLarge
+                )
+                Button(onClick = { mService.clearLog() }) { Text(stringResource(R.string.deleteButton)) }
+            }
+            SelectionContainer {
+                Text(
+                    if (logText == "") stringResource(R.string.no_log) else logText,
+                    style = MaterialTheme.typography.bodyMedium.merge(fontFamily = FontFamily.Monospace),
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -91,27 +201,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setListener() {
-        val configButton = findViewById<Button>(R.id.configButton)
-        configButton.setOnClickListener {
-            val intent = Intent(this, ConfigActivity::class.java)
-            //intent.putExtra("type",type+"/"+l);
-            startActivity(intent)
-        }
-        val aboutButton = findViewById<Button>(R.id.aboutButton)
-        aboutButton.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
-        val deleteButton = findViewById<Button>(R.id.deleteButton)
-        deleteButton.setOnClickListener {
-            mService.clearLog()
-        }
-    }
-
     fun checkConfig() {
         val files: Array<String> = this.fileList()
         Log.d("adx", files.joinToString(","))
         if (!files.contains(BuildConfig.ConfigFileName)) {
             val assetmanager = resources.assets
-            this.openFileOutput(BuildConfig.ConfigFileName, Context.MODE_PRIVATE).use {
+            this.openFileOutput(BuildConfig.ConfigFileName, MODE_PRIVATE).use {
                 it.write(assetmanager.open((BuildConfig.ConfigFileName)).readBytes())
             }
         }
@@ -167,7 +262,7 @@ class MainActivity : AppCompatActivity() {
             }
             // Register the channel with the system
             val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
