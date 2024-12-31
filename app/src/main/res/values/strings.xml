@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">frp</string>
     <string name="frp_for_android" translatable="false">frp for Android</string>
-    <string name="state_switch">Enable frp</string>
+    <string name="state_switch">Enable frpc</string>
     <string name="auto_start_switch">Startup at Boot</string>
     <string name="configButton">Config</string>
     <string name="aboutButton">About</string>

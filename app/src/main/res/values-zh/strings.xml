@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="state_switch">切换开关</string>
+    <string name="state_switch">启动frpc服务</string>
     <string name="auto_start_switch">开机自启动</string>
     <string name="configButton">设置</string>
     <string name="aboutButton">关于</string>
