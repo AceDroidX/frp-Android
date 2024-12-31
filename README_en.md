@@ -5,8 +5,8 @@ A frp client for Android
 [简体中文](README.md) | English
 
 <div style="display:inline-block">
-<img src="https://cdn.jsdelivr.net/gh/AceDroidX/frp-Android/image/image1_en.jpg" alt="image1_en.png" width="300">
-<img src="https://cdn.jsdelivr.net/gh/AceDroidX/frp-Android/image/image2_en.jpg" alt="image2_en.png" width="300">
+<img src="./image/image1_en.png" alt="image1_en.png" width="200">
+<img src="./image/image2_en.png" alt="image2_en.png" width="200">
 </div>
 
 ## Compilation Methods
