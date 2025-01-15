@@ -3,19 +3,20 @@
     <string name="frp_for_android" translatable="false">frp for Android</string>
     <string name="state_switch">Enable frpc</string>
     <string name="auto_start_switch">Startup at Boot</string>
-    <string name="configButton">Config</string>
+    <string name="addConfigButton">Add Config</string>
     <string name="aboutButton">About</string>
     <string name="frp_log">frp Log</string>
     <string name="deleteButton">Clear</string>
     <string name="no_log">No Log</string>
     <string name="saveConfigButton">Save</string>
     <string name="dontSaveConfigButton">Don\'t Save</string>
+    <string name="deleteConfigButton">DeLete</string>
     <string name="notification_channel_name">frp Background Service</string>
     <string name="notification_channel_desc">frp Background Service Notification</string>
     <string name="service_start_toast">frp Service Started</string>
     <string name="service_stop_toast">frp Service Stopped</string>
-    <string name="notification_title">frp Background Service</string>
-    <string name="notification_content">frp Started</string>
+    <string name="frpc_notification_title">frpc Background Service</string>
+    <string name="frpc_notification_content">%d frpc Started</string>
     <string name="copy">Copy</string>
     <string name="copied">Copied</string>
 </resources>

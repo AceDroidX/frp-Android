@@ -15,10 +15,11 @@ class AutoStartBroadReceiver : BroadcastReceiver() {
         if (ACTION == intent.action && auto_start) {
             //开机启动
             val mainIntent = Intent(context, ShellService::class.java)
+            mainIntent.setAction(ShellServiceAction.AUTO_START)
             mainIntent.putExtra("filename", BuildConfig.FrpcFileName)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(mainIntent)
-            }else{
+            } else {
                 context.startService(mainIntent)
             }
         }

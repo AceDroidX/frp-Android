@@ -1,9 +1,11 @@
 package io.github.acedroidx.frp
 
+import android.os.Build
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
+import java.io.InterruptedIOException
 
 class ShellThread(
     val command: String,
@@ -11,10 +13,11 @@ class ShellThread(
     val dir: File,
     val outputCallback: (text: String) -> Unit
 ) : Thread() {
+    private lateinit var process: Process
     override fun run() {
         try {
 //            Log.d("adx","线程启动")
-            val process = Runtime.getRuntime().exec(command, envp, dir)
+            process = Runtime.getRuntime().exec(command, envp, dir)
             val inputStream = process.inputStream
             val reader = BufferedReader(InputStreamReader(inputStream))
             // https://8thlight.com/insights/handling-blocking-threads-in-java
@@ -27,12 +30,30 @@ class ShellThread(
                         break
                     }
                 }
-                reader.readLine()?.let { outputCallback(it) }
+                try {
+                    reader.readLine()?.let { outputCallback(it) }
+                } catch (e: InterruptedIOException) {
+                    // 线程被中断时的处理
+//                    Log.d("adx", "读取中断")
+                    break
+                }
             }
             reader.close()
-            process.destroy()
-//            Log.d("adx","线程关闭")
+            stopProcess()
+//            Log.d("adx", "线程关闭")
         } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    fun stopProcess() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                process.destroyForcibly()
+            } else {
+                process.destroy()
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }

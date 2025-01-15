@@ -2,19 +2,20 @@
 <resources>
     <string name="state_switch">启动frpc服务</string>
     <string name="auto_start_switch">开机自启动</string>
-    <string name="configButton">设置</string>
+    <string name="addConfigButton">添加配置</string>
     <string name="aboutButton">关于</string>
     <string name="frp_log">frp日志</string>
     <string name="deleteButton">清除</string>
     <string name="no_log">无日志</string>
     <string name="saveConfigButton">保存</string>
     <string name="dontSaveConfigButton">不保存</string>
+    <string name="deleteConfigButton">删除</string>
     <string name="notification_channel_name">frp后台服务</string>
     <string name="notification_channel_desc">frp后台服务通知</string>
     <string name="service_start_toast">已启动frp服务</string>
     <string name="service_stop_toast">已关闭frp服务</string>
-    <string name="notification_title">frp后台服务</string>
-    <string name="notification_content">已启动frp</string>
+    <string name="frpc_notification_title">frpc后台服务</string>
+    <string name="frpc_notification_content">已启动%d个frpc</string>
     <string name="copy">复制</string>
     <string name="copied">已复制</string>
 </resources>

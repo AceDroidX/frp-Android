@@ -1,6 +1,7 @@
 package io.github.acedroidx.frp
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,14 +33,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.acedroidx.frp.ui.theme.FrpTheme
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class ConfigActivity : ComponentActivity() {
     private val configEditText = MutableStateFlow("")
+    private var configFileName: String? = null
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        initConfigFileName()
         readConfig()
 
         enableEdgeToEdge()
@@ -79,6 +84,9 @@ class ConfigActivity : ComponentActivity() {
                 Button(onClick = { finish() }) {
                     Text(stringResource(R.string.dontSaveConfigButton))
                 }
+                Button(onClick = { deleteConfig();finish() }) {
+                    Text(stringResource(R.string.deleteConfigButton))
+                }
             }
             TextField(
                 configEditText.collectAsStateWithLifecycle("").value,
@@ -88,10 +96,17 @@ class ConfigActivity : ComponentActivity() {
         }
     }
 
+    fun initConfigFileName() {
+        configFileName = intent.getStringExtra("configFileName")
+        if (configFileName.isNullOrEmpty()) {
+            configFileName = "frpc_" + System.currentTimeMillis() + ".toml"
+        }
+    }
+
     fun readConfig() {
         val files: Array<String> = this.fileList()
-        if (files.contains(BuildConfig.ConfigFileName)) {
-            val mReader = this.openFileInput(BuildConfig.ConfigFileName).bufferedReader()
+        if (files.contains(configFileName)) {
+            val mReader = this.openFileInput(configFileName).bufferedReader()
             val mRespBuff = StringBuffer()
             val buff = CharArray(1024)
             var ch = 0
@@ -101,13 +116,36 @@ class ConfigActivity : ComponentActivity() {
             mReader.close()
             configEditText.value = mRespBuff.toString()
         } else {
-            configEditText.value = ""
+            configEditText.value = readAssetFile(this, BuildConfig.ConfigFileName)
         }
     }
 
     fun saveConfig() {
-        this.openFileOutput(BuildConfig.ConfigFileName, Context.MODE_PRIVATE).use {
+        this.openFileOutput(configFileName, Context.MODE_PRIVATE).use {
             it.write(configEditText.value.toByteArray())
         }
+        // 通知 MainActivity 更新列表
+        sendBroadcast(Intent("ADD_CONFIG"))
+    }
+
+    fun deleteConfig() {
+        this.deleteFile(configFileName)
+        val intent = Intent("DELETE_CONFIG")
+        intent.putExtra("configFileName", configFileName)
+        sendBroadcast(intent)
+    }
+
+    private fun readAssetFile(context: Context, fileName: String): String {
+        val assetManager = context.assets
+        val inputStream = assetManager.open(fileName)
+        val reader = BufferedReader(InputStreamReader(inputStream))
+        val stringBuilder = StringBuilder()
+        var line: String? = reader.readLine()
+        while (line != null) {
+            stringBuilder.append(line).append("\n")
+            line = reader.readLine()
+        }
+        reader.close()
+        return stringBuilder.toString()
     }
 }

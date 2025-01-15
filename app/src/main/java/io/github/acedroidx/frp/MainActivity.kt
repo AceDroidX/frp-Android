@@ -3,8 +3,11 @@ package io.github.acedroidx.frp
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -17,6 +20,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
@@ -56,10 +60,12 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
-    private val isEnable = MutableStateFlow(false)
     private val isStartup = MutableStateFlow(false)
     private val logText = MutableStateFlow("")
+    private val configList = MutableStateFlow<List<String>>(emptyList())
+    private val startingConfigList = MutableStateFlow<List<String>>(emptyList())
 
+    private lateinit var receiver: BroadcastReceiver
     private lateinit var preferences: SharedPreferences
 
     private lateinit var mService: ShellService
@@ -75,8 +81,9 @@ class MainActivity : ComponentActivity() {
             mBound = true
 
             mService.lifecycleScope.launch {
-                mService.isRunning.collect {
-                    isEnable.value = it
+                mService.processThreads.collect { processThreads ->
+                    startingConfigList.value = processThreads.keys.toList()
+                    autoStartConfigChange()
                 }
             }
             mService.lifecycleScope.launch {
@@ -96,7 +103,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        registerReceiver()
         checkConfig()
+        updateConfigList()
         checkNotificationPermission()
         createBGNotificationChannel()
 
@@ -134,22 +143,33 @@ class MainActivity : ComponentActivity() {
     @Preview(showBackground = true)
     @Composable
     fun MainContent() {
+        val configList by configList.collectAsStateWithLifecycle(emptyList())
         val clipboardManager = LocalClipboardManager.current
-        val isEnable by isEnable.collectAsStateWithLifecycle(false)
+        val startingConfigSetValue by startingConfigList.collectAsStateWithLifecycle()
         val logText by logText.collectAsStateWithLifecycle("")
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.state_switch))
-                Switch(checked = isEnable,
-                    onCheckedChange = { if (it) (startShell()) else (stopShell()) })
+            configList.filter { it.contains("frpc") }.reversed().forEach { configFileName ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = {
+                            val intent = Intent(this@MainActivity, ConfigActivity::class.java)
+                            intent.putExtra("configFileName", configFileName)
+                            startActivity(intent)
+                        })
+                ) {
+                    Text(configFileName)
+                    Switch(checked = startingConfigSetValue.contains(configFileName),
+                        onCheckedChange = {
+                            if (it) (startShell(configFileName)) else (stopShell(configFileName))
+                        })
+                }
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -172,7 +192,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Button(onClick = {
                     startActivity(Intent(this@MainActivity, ConfigActivity::class.java))
-                }) { Text(stringResource(R.string.configButton)) }
+                }) { Text(stringResource(R.string.addConfigButton)) }
                 Button(onClick = {
                     startActivity(Intent(this@MainActivity, AboutActivity::class.java))
                 }) { Text(stringResource(R.string.aboutButton)) }
@@ -210,12 +230,13 @@ class MainActivity : ComponentActivity() {
             unbindService(connection)
             mBound = false
         }
+        unregisterReceiver(receiver)
     }
 
     fun checkConfig() {
         val files: Array<String> = this.fileList()
         Log.d("adx", files.joinToString(","))
-        if (!files.contains(BuildConfig.ConfigFileName)) {
+        if (files.find { it.contains("frpc") } == null) {
             val assetmanager = resources.assets
             this.openFileOutput(BuildConfig.ConfigFileName, MODE_PRIVATE).use {
                 it.write(assetmanager.open((BuildConfig.ConfigFileName)).readBytes())
@@ -223,16 +244,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startShell() {
+    private fun startShell(configFileName: String) {
         val intent = Intent(this, ShellService::class.java)
         intent.setAction(ShellServiceAction.START)
         intent.putExtra("filename", BuildConfig.FrpcFileName)
+        intent.putExtra("configFileName", configFileName)
         startService(intent)
     }
 
-    private fun stopShell() {
+    private fun stopShell(configFileName: String) {
         val intent = Intent(this, ShellService::class.java)
         intent.setAction(ShellServiceAction.STOP)
+        intent.putExtra("configFileName", configFileName)
         startService(intent)
     }
 
@@ -275,6 +298,40 @@ class MainActivity : ComponentActivity() {
             val notificationManager: NotificationManager =
                 getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun registerReceiver() {
+        receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == "DELETE_CONFIG") {
+                    stopShell(intent.extras?.getString("configFileName")!!)
+                    updateConfigList()
+                }
+                if (intent.action == "ADD_CONFIG") {
+                    updateConfigList()
+                }
+            }
+        }
+        val filter = IntentFilter("ADD_CONFIG")
+        filter.addAction("DELETE_CONFIG")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag") (registerReceiver(receiver, filter))
+        }
+    }
+
+    private fun updateConfigList() {
+        val files: Array<String> = this.fileList()
+        configList.value =
+            files.filter { it.contains("frpc") }.sortedBy { it.substringBeforeLast(".") }.reversed()
+    }
+
+    private fun autoStartConfigChange() {
+        with(preferences.edit()) {
+            putStringSet("auto_start_config", startingConfigList.value.toSet())
+            apply()
         }
     }
 }
