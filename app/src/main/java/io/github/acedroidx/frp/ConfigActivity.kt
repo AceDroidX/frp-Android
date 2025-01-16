@@ -78,13 +78,13 @@ class ConfigActivity : ComponentActivity() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(onClick = { saveConfig();finish() }) {
+                Button(onClick = { saveConfig();closeActivity(ConfigAction.ADD_CONFIG) }) {
                     Text(stringResource(R.string.saveConfigButton))
                 }
-                Button(onClick = { finish() }) {
+                Button(onClick = { closeActivity() }) {
                     Text(stringResource(R.string.dontSaveConfigButton))
                 }
-                Button(onClick = { deleteConfig();finish() }) {
+                Button(onClick = { deleteConfig();closeActivity(ConfigAction.DELETE_CONFIG) }) {
                     Text(stringResource(R.string.deleteConfigButton))
                 }
             }
@@ -124,15 +124,18 @@ class ConfigActivity : ComponentActivity() {
         this.openFileOutput(configFileName, Context.MODE_PRIVATE).use {
             it.write(configEditText.value.toByteArray())
         }
-        // 通知 MainActivity 更新列表
-        sendBroadcast(Intent("ADD_CONFIG"))
     }
 
     fun deleteConfig() {
         this.deleteFile(configFileName)
-        val intent = Intent("DELETE_CONFIG")
-        intent.putExtra("configFileName", configFileName)
-        sendBroadcast(intent)
+    }
+
+    fun closeActivity(action: String? = null) {
+        setResult(RESULT_OK, Intent().apply {
+            this.action = action
+            this.putExtra("configFileName", configFileName)
+        })
+        finish()
     }
 
     private fun readAssetFile(context: Context, fileName: String): String {

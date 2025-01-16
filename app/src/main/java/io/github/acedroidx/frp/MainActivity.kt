@@ -5,9 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -98,12 +96,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val configActivityLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult ->
+            activityResult.data?.let {
+                if (it.action == ConfigAction.ADD_CONFIG) {
+                    updateConfigList()
+                } else if (it.action == ConfigAction.DELETE_CONFIG) {
+                    it.extras?.getString("configFileName")?.let { it1 -> stopShell(it1) }
+                    updateConfigList()
+                }
+            }
+        }
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        registerReceiver()
         checkConfig()
         updateConfigList()
         checkNotificationPermission()
@@ -161,7 +169,7 @@ class MainActivity : ComponentActivity() {
                         .clickable(onClick = {
                             val intent = Intent(this@MainActivity, ConfigActivity::class.java)
                             intent.putExtra("configFileName", configFileName)
-                            startActivity(intent)
+                            configActivityLauncher.launch(intent)
                         })
                 ) {
                     Text(configFileName)
@@ -191,7 +199,12 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(onClick = {
-                    startActivity(Intent(this@MainActivity, ConfigActivity::class.java))
+                    configActivityLauncher.launch(
+                        Intent(
+                            this@MainActivity,
+                            ConfigActivity::class.java
+                        )
+                    )
                 }) { Text(stringResource(R.string.addConfigButton)) }
                 Button(onClick = {
                     startActivity(Intent(this@MainActivity, AboutActivity::class.java))
@@ -298,27 +311,6 @@ class MainActivity : ComponentActivity() {
             val notificationManager: NotificationManager =
                 getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun registerReceiver() {
-        receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action == "DELETE_CONFIG") {
-                    stopShell(intent.extras?.getString("configFileName")!!)
-                    updateConfigList()
-                }
-                if (intent.action == "ADD_CONFIG") {
-                    updateConfigList()
-                }
-            }
-        }
-        val filter = IntentFilter("ADD_CONFIG")
-        filter.addAction("DELETE_CONFIG")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(receiver, filter, RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag") (registerReceiver(receiver, filter))
         }
     }
 
