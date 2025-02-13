@@ -19,4 +19,7 @@
     <string name="copy">复制</string>
     <string name="copied">已复制</string>
     <string name="no_config">没有配置，点击按钮去添加一个！</string>
+    <string name="rename">重命名</string>
+    <string name="confirm">确认</string>
+    <string name="dismiss">取消</string>
 </resources>

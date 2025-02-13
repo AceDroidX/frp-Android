@@ -20,4 +20,7 @@
     <string name="copy">Copy</string>
     <string name="copied">Copied</string>
     <string name="no_config">No Config. Click button to add one!</string>
+    <string name="rename">Rename</string>
+    <string name="confirm">Confirm</string>
+    <string name="dismiss">Dismiss</string>
 </resources>

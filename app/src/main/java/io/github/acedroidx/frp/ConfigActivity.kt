@@ -18,17 +18,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
@@ -91,6 +99,7 @@ class ConfigActivity : ComponentActivity() {
     @Preview(showBackground = true)
     @Composable
     fun MainContent() {
+        val openDialog = remember { mutableStateOf(false) }
         Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -102,12 +111,17 @@ class ConfigActivity : ComponentActivity() {
                 Button(onClick = { closeActivity() }) {
                     Text(stringResource(R.string.dontSaveConfigButton))
                 }
+                Button(onClick = { openDialog.value = true }) {
+                    Text(stringResource(R.string.rename))
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Text(stringResource(R.string.auto_start_switch))
                 Switch(checked = isAutoStart.collectAsStateWithLifecycle(false).value,
-                    onCheckedChange = {
-                        isAutoStart.value = it
-                        setAutoStart(it)
-                    })
+                    onCheckedChange = { setAutoStart(it) })
             }
             TextField(
                 configEditText.collectAsStateWithLifecycle("").value,
@@ -115,6 +129,41 @@ class ConfigActivity : ComponentActivity() {
                 textStyle = MaterialTheme.typography.bodyMedium.merge(fontFamily = FontFamily.Monospace)
             )
         }
+        if (openDialog.value) {
+            RenameDialog(configFile.name.removeSuffix(".toml")) { openDialog.value = false }
+        }
+    }
+
+    @Composable
+    fun RenameDialog(
+        originName: String,
+        onClose: () -> Unit,
+    ) {
+        var text by remember { mutableStateOf(originName) }
+        AlertDialog(title = {
+            Text(stringResource(R.string.rename))
+        }, icon = {
+            Icon(
+                painterResource(id = R.drawable.ic_rename), contentDescription = "Rename Icon"
+            )
+        }, text = {
+            TextField(text, onValueChange = { text = it })
+        }, onDismissRequest = {
+            onClose()
+        }, confirmButton = {
+            TextButton(onClick = {
+                renameConfig("$text.toml")
+                onClose()
+            }) {
+                Text(stringResource(R.string.confirm))
+            }
+        }, dismissButton = {
+            TextButton(onClick = {
+                onClose()
+            }) {
+                Text(stringResource(R.string.dismiss))
+            }
+        })
     }
 
     fun readConfig() {
@@ -138,23 +187,32 @@ class ConfigActivity : ComponentActivity() {
         configFile.writeText(configEditText.value)
     }
 
+    fun renameConfig(newName: String) {
+        val originAutoStart = isAutoStart.value
+        setAutoStart(false)
+        val newFile = File(configFile.parent, newName)
+        configFile.renameTo(newFile)
+        configFile = newFile
+        setAutoStart(originAutoStart)
+    }
+
     fun readIsAutoStart() {
         isAutoStart.value =
             preferences.getStringSet("auto_start_frpc_list", emptySet())?.contains(configFile.name)
                 ?: false
     }
 
-    fun setAutoStart(isAutoStart: Boolean) {
+    fun setAutoStart(value: Boolean) {
         val editor = preferences.edit()
         val set = preferences.getStringSet("auto_start_frpc_list", emptySet())?.toMutableSet()
-        if (isAutoStart) {
+        if (value) {
             set?.add(configFile.name)
         } else {
             set?.remove(configFile.name)
         }
         editor.putStringSet("auto_start_frpc_list", set)
         editor.apply()
-        Log.d("adx", set.toString())
+        isAutoStart.value = value
     }
 
     fun closeActivity() {
