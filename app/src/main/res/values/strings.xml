@@ -19,4 +19,5 @@
     <string name="frpc_notification_content">%d frpc Started</string>
     <string name="copy">Copy</string>
     <string name="copied">Copied</string>
+    <string name="no_config">No Config. Click button to add one!</string>
 </resources>

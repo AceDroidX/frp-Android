@@ -1,48 +1,50 @@
 package io.github.acedroidx.frp
 
 import android.os.Build
-import java.io.BufferedReader
 import java.io.File
-import java.io.IOException
-import java.io.InputStreamReader
 import java.io.InterruptedIOException
 
 class ShellThread(
-    val command: String,
-    val envp: Array<String>,
+    val command: List<String>,
     val dir: File,
+    val envp: Map<String, String> = emptyMap(),
     val outputCallback: (text: String) -> Unit
 ) : Thread() {
     private lateinit var process: Process
+
     override fun run() {
         try {
-//            Log.d("adx","线程启动")
-            process = Runtime.getRuntime().exec(command, envp, dir)
-            val inputStream = process.inputStream
-            val reader = BufferedReader(InputStreamReader(inputStream))
-            // https://8thlight.com/insights/handling-blocking-threads-in-java
-            while (!isInterrupted) {
-                if (!reader.ready()) {
-                    try {
-                        sleep(100)
-                        continue
-                    } catch (e: InterruptedException) {
-                        break
-                    }
-                }
+            val processBuilder = ProcessBuilder(command)
+            processBuilder.directory(dir)
+            envp.forEach { (key, value) ->
+                processBuilder.environment()[key] = value
+            }
+            processBuilder.redirectErrorStream(true) // 合并错误流
+
+            process = processBuilder.start()
+
+            // 处理输出流
+            process.inputStream.bufferedReader().use { reader ->
                 try {
-                    reader.readLine()?.let { outputCallback(it) }
+                    var line: String? = null
+                    while (!isInterrupted && reader.readLine().also { line = it } != null) {
+                        line?.let { outputCallback(it) }
+                    }
                 } catch (e: InterruptedIOException) {
-                    // 线程被中断时的处理
-//                    Log.d("adx", "读取中断")
-                    break
+                    // 线程被中断
+                    outputCallback("Thread interrupted: ${e.message}")
                 }
             }
-            reader.close()
-            stopProcess()
-//            Log.d("adx", "线程关闭")
-        } catch (e: IOException) {
+
+            // 等待进程结束并读取退出码
+            val exitCode = process.waitFor()
+            outputCallback("Process exited with code: $exitCode")
+
+        } catch (e: Exception) {
             e.printStackTrace()
+            outputCallback("Error: ${e.javaClass.simpleName} - ${e.message}")
+        } finally {
+            stopProcess()
         }
     }
 
@@ -55,6 +57,7 @@ class ShellThread(
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            outputCallback("Error stopping process: ${e.message}")
         }
     }
 }

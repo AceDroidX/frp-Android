@@ -13,10 +13,15 @@ class AutoStartBroadReceiver : BroadcastReceiver() {
         val editor = context.getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)
         val auto_start = editor.getBoolean("auto_start", false)
         if (ACTION == intent.action && auto_start) {
+            val frpcConfigSet = editor.getStringSet("auto_start_frpc_list", emptySet())
+            val frpsConfigSet = editor.getStringSet("auto_start_frps_list", emptySet())
+            val frpcConfigList = frpcConfigSet?.map { FrpConfig(FrpType.FRPC, it) }
+            val frpsConfigList = frpsConfigSet?.map { FrpConfig(FrpType.FRPS, it) }
+            val configList = frpsConfigList?.let { frpcConfigList?.let { it1 -> it + it1 } }
             //开机启动
             val mainIntent = Intent(context, ShellService::class.java)
-            mainIntent.setAction(ShellServiceAction.AUTO_START)
-            mainIntent.putExtra("filename", BuildConfig.FrpcFileName)
+            mainIntent.setAction(ShellServiceAction.START)
+            mainIntent.putParcelableArrayListExtra("FrpConfig", configList?.let { ArrayList(it) })
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(mainIntent)
             } else {

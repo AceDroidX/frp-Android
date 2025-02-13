@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import io.github.acedroidx.frp.ui.theme.FrpTheme
 
 class AboutActivity : ComponentActivity() {
@@ -61,7 +63,7 @@ class AboutActivity : ComponentActivity() {
     @Composable
     fun MainContent() {
         val uriHandler = LocalUriHandler.current
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(buildAnnotatedString {
                 append("Github: ")
                 val link = LinkAnnotation.Url(
@@ -72,6 +74,17 @@ class AboutActivity : ComponentActivity() {
                     uriHandler.openUri(url)
                 }
                 withLink(link) { append("https://github.com/AceDroidX/frp-Android") }
+            })
+            Text(buildAnnotatedString {
+                append("Github: ")
+                val link = LinkAnnotation.Url(
+                    "https://github.com/fatedier/frp",
+                    TextLinkStyles(SpanStyle(color = MaterialTheme.colorScheme.primary))
+                ) {
+                    val url = (it as LinkAnnotation.Url).url
+                    uriHandler.openUri(url)
+                }
+                withLink(link) { append("https://github.com/fatedier/frp") }
             })
         }
     }

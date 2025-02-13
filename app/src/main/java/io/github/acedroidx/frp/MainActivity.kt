@@ -3,7 +3,6 @@ package io.github.acedroidx.frp
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -18,7 +17,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
@@ -26,14 +24,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -44,9 +46,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -55,16 +59,20 @@ import androidx.lifecycle.lifecycleScope
 import io.github.acedroidx.frp.ui.theme.FrpTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
     private val isStartup = MutableStateFlow(false)
     private val logText = MutableStateFlow("")
-    private val configList = MutableStateFlow<List<String>>(emptyList())
-    private val startingConfigList = MutableStateFlow<List<String>>(emptyList())
+    private val frpcConfigList = MutableStateFlow<List<FrpConfig>>(emptyList())
+    private val runningConfigList = MutableStateFlow<List<FrpConfig>>(emptyList())
 
-    private lateinit var receiver: BroadcastReceiver
     private lateinit var preferences: SharedPreferences
+    private lateinit var frpcDir: File
 
     private lateinit var mService: ShellService
     private var mBound: Boolean = false
@@ -80,8 +88,7 @@ class MainActivity : ComponentActivity() {
 
             mService.lifecycleScope.launch {
                 mService.processThreads.collect { processThreads ->
-                    startingConfigList.value = processThreads.keys.toList()
-                    autoStartConfigChange()
+                    runningConfigList.value = processThreads.keys.toList()
                 }
             }
             mService.lifecycleScope.launch {
@@ -98,27 +105,21 @@ class MainActivity : ComponentActivity() {
 
     private val configActivityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult ->
-            activityResult.data?.let {
-                if (it.action == ConfigAction.ADD_CONFIG) {
-                    updateConfigList()
-                } else if (it.action == ConfigAction.DELETE_CONFIG) {
-                    it.extras?.getString("configFileName")?.let { it1 -> stopShell(it1) }
-                    updateConfigList()
-                }
-            }
+            updateConfigList()
         }
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        frpcDir = File(filesDir, "frpc")
+        preferences = getSharedPreferences("data", MODE_PRIVATE)
+        isStartup.value = preferences.getBoolean("auto_start", false)
+
         checkConfig()
         updateConfigList()
         checkNotificationPermission()
         createBGNotificationChannel()
-
-        preferences = getSharedPreferences("data", MODE_PRIVATE)
-        isStartup.value = preferences.getBoolean("auto_start", false)
 
         enableEdgeToEdge()
         setContent {
@@ -151,32 +152,52 @@ class MainActivity : ComponentActivity() {
     @Preview(showBackground = true)
     @Composable
     fun MainContent() {
-        val configList by configList.collectAsStateWithLifecycle(emptyList())
+        val frpcConfigList by frpcConfigList.collectAsStateWithLifecycle(emptyList())
+        val runningConfigList by runningConfigList.collectAsStateWithLifecycle(emptyList())
         val clipboardManager = LocalClipboardManager.current
-        val startingConfigSetValue by startingConfigList.collectAsStateWithLifecycle()
         val logText by logText.collectAsStateWithLifecycle("")
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            configList.filter { it.contains("frpc") }.reversed().forEach { configFileName ->
+            if (frpcConfigList.isEmpty()) {
+                Text(
+                    stringResource(R.string.no_config),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
+            frpcConfigList.forEach { config ->
+                val isRunning = runningConfigList.contains(config)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = {
-                            val intent = Intent(this@MainActivity, ConfigActivity::class.java)
-                            intent.putExtra("configFileName", configFileName)
-                            configActivityLauncher.launch(intent)
-                        })
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(configFileName)
-                    Switch(checked = startingConfigSetValue.contains(configFileName),
-                        onCheckedChange = {
-                            if (it) (startShell(configFileName)) else (stopShell(configFileName))
-                        })
+                    Text(config.fileName)
+                    Spacer(Modifier.weight(1f))
+                    IconButton(
+                        onClick = { startConfigActivity(config) },
+                        enabled = !isRunning,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_pencil_24dp),
+                            contentDescription = "编辑"
+                        )
+                    }
+                    IconButton(
+                        onClick = { deleteConfig(config) },
+                        enabled = !isRunning,
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_baseline_delete_24),
+                            contentDescription = "删除"
+                        )
+                    }
+                    Switch(checked = isRunning, onCheckedChange = {
+                        if (it) (startShell(config)) else (stopShell(config))
+                    })
                 }
             }
             Row(
@@ -198,14 +219,7 @@ class MainActivity : ComponentActivity() {
                 horizontalArrangement = Arrangement.SpaceAround,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Button(onClick = {
-                    configActivityLauncher.launch(
-                        Intent(
-                            this@MainActivity,
-                            ConfigActivity::class.java
-                        )
-                    )
-                }) { Text(stringResource(R.string.addConfigButton)) }
+                Button(onClick = { startConfigActivity() }) { Text(stringResource(R.string.addConfigButton)) }
                 Button(onClick = {
                     startActivity(Intent(this@MainActivity, AboutActivity::class.java))
                 }) { Text(stringResource(R.string.aboutButton)) }
@@ -243,32 +257,65 @@ class MainActivity : ComponentActivity() {
             unbindService(connection)
             mBound = false
         }
-        unregisterReceiver(receiver)
     }
 
     fun checkConfig() {
-        val files: Array<String> = this.fileList()
-        Log.d("adx", files.joinToString(","))
-        if (files.find { it.contains("frpc") } == null) {
-            val assetmanager = resources.assets
-            this.openFileOutput(BuildConfig.ConfigFileName, MODE_PRIVATE).use {
-                it.write(assetmanager.open((BuildConfig.ConfigFileName)).readBytes())
+        if (frpcDir.exists() && !frpcDir.isDirectory) {
+            frpcDir.delete()
+        }
+        frpcDir.mkdirs()
+        // v1.1旧版本配置迁移
+        // 遍历文件夹内的所有文件
+        this.filesDir.listFiles()?.forEach { file ->
+            if (file.isFile && file.name.endsWith(".toml")) {
+                // 构建目标文件路径
+                val destination = File(frpcDir, file.name)
+                // 移动文件
+                if (file.renameTo(destination)) {
+                    Log.d("adx", "Moved: ${file.name} to ${destination.absolutePath}")
+                } else {
+                    Log.e("adx", "Failed to move: ${file.name}")
+                }
             }
         }
     }
 
-    private fun startShell(configFileName: String) {
+    private fun deleteConfig(config: FrpConfig) {
+        val file = config.getFile(this)
+        if (file.exists()) {
+            file.delete()
+        }
+        updateConfigList()
+    }
+
+    private fun startConfigActivity() {
+        val currentDate = Date()
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH.mm.ss", Locale.getDefault())
+        val formattedDateTime = formatter.format(currentDate)
+        val fileName = "$formattedDateTime.toml"
+        val file = File(frpcDir, fileName)
+        file.writeBytes(resources.assets.open((BuildConfig.ConfigFileName)).readBytes())
+        val config = FrpConfig(FrpType.FRPC, fileName)
+        startConfigActivity(config)
+    }
+
+    private fun startConfigActivity(config: FrpConfig) {
+        val intent = Intent(this, ConfigActivity::class.java)
+        intent.putExtra("FrpConfig", config)
+        configActivityLauncher.launch(intent)
+    }
+
+    private fun startShell(config: FrpConfig) {
         val intent = Intent(this, ShellService::class.java)
         intent.setAction(ShellServiceAction.START)
-        intent.putExtra("filename", BuildConfig.FrpcFileName)
-        intent.putExtra("configFileName", configFileName)
+        intent.putExtra("FrpConfig", arrayListOf(config))
         startService(intent)
     }
 
-    private fun stopShell(configFileName: String) {
+    private fun stopShell(config: FrpConfig) {
         val intent = Intent(this, ShellService::class.java)
         intent.setAction(ShellServiceAction.STOP)
-        intent.putExtra("configFileName", configFileName)
+        intent.putExtra("FrpConfig", arrayListOf(config))
         startService(intent)
     }
 
@@ -315,14 +362,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateConfigList() {
-        val files: Array<String> = this.fileList()
-        configList.value =
-            files.filter { it.contains("frpc") }.sortedBy { it.substringBeforeLast(".") }.reversed()
-    }
+        frpcConfigList.value =
+            (frpcDir.list()?.toList() ?: listOf()).map { FrpConfig(FrpType.FRPC, it) }
 
-    private fun autoStartConfigChange() {
+        // 检查自启动列表中是否含有已经删除的配置
+        val frpcAutoStartList =
+            preferences.getStringSet("auto_start_frpc_list", emptySet())?.filter {
+                frpcConfigList.value.contains(
+                    FrpConfig(FrpType.FRPC, it)
+                )
+            }
         with(preferences.edit()) {
-            putStringSet("auto_start_config", startingConfigList.value.toSet())
+            putStringSet("auto_start_frpc_list", frpcAutoStartList?.toSet())
             apply()
         }
     }

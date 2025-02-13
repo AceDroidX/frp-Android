@@ -20,7 +20,7 @@ import java.util.Random
 
 
 class ShellService : LifecycleService() {
-    private val _processThreads = MutableStateFlow(mutableMapOf<String, ShellThread>())
+    private val _processThreads = MutableStateFlow(mutableMapOf<FrpConfig, ShellThread>())
     val processThreads = _processThreads.asStateFlow()
 
     private val _logText = MutableStateFlow("")
@@ -56,32 +56,32 @@ class ShellService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        val frpConfig: ArrayList<FrpConfig>? =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.extras?.getParcelableArrayList("FrpConfig", FrpConfig::class.java)
+            } else {
+                @Suppress("DEPRECATION") intent?.extras?.getParcelable("FrpConfig")
+            }
+        if (frpConfig == null) {
+            Log.e("adx", "frpConfig is null")
+            Toast.makeText(this, "frpConfig is null", Toast.LENGTH_SHORT).show()
+            return START_NOT_STICKY
+        }
         when (intent?.action) {
             ShellServiceAction.START -> {
-                val filename = intent.extras?.getString("filename")
-                val configFileName = intent.extras?.getString("configFileName")
-                Log.d("adx", "start configFileName is $configFileName")
-                if (filename == null) {
-                    Log.w("adx", "filename is null,service won't start")
-                    Toast.makeText(this, "filename is null,service won't start", Toast.LENGTH_SHORT)
-                        .show()
-                    return START_NOT_STICKY
+                for (config in frpConfig) {
+                    startFrp(config)
                 }
-                startFrpc(configFileName, filename)
-            }
-
-            ShellServiceAction.AUTO_START -> {
-                val filename = intent.extras?.getString("filename")
-                val preferences = getSharedPreferences("data", MODE_PRIVATE)
-                val autoStartConfigSet = preferences.getStringSet("auto_start_config", emptySet())
-                autoStartConfigSet?.forEach {
-                    startFrpc(it, filename)
-                }
+                Toast.makeText(this, getString(R.string.service_start_toast), Toast.LENGTH_SHORT)
+                    .show()
+                startForeground(1, showNotification())
             }
 
             ShellServiceAction.STOP -> {
-                val configFileName = intent.extras?.getString("configFileName")
-                stopThread(configFileName!!)
+                for (config in frpConfig) {
+                    stopFrp(config)
+                }
+                startForeground(1, showNotification())
                 if (_processThreads.value.isEmpty()) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -97,27 +97,42 @@ class ShellService : LifecycleService() {
         return START_NOT_STICKY
     }
 
-    private fun startFrpc(configFileName: String?, filename: String?) {
-        if (!_processThreads.value.contains(configFileName)) {
-            val ainfo = packageManager.getApplicationInfo(
-                packageName, PackageManager.GET_SHARED_LIBRARY_FILES
-            )
-            Log.d("adx", "native library dir ${ainfo.nativeLibraryDir}")
-            try {
-                val thread = runCommand(
-                    "${ainfo.nativeLibraryDir}/${filename} -c ${configFileName}",
-                    arrayOf(""),
-                    this.filesDir
-                )
-                _processThreads.update { it.toMutableMap().apply { put(configFileName!!, thread) } }
-                Toast.makeText(this, getString(R.string.service_start_toast), Toast.LENGTH_SHORT)
-                    .show()
-                startForeground(1, showNotification());
-            } catch (e: Exception) {
-                Log.e("adx", e.stackTraceToString())
-                Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
-                stopSelf()
-            }
+    private fun startFrp(config: FrpConfig) {
+        Log.d("adx", "start config is $config")
+        val dir = config.getDir(this)
+        val file = config.getFile(this)
+        if (!file.exists()) {
+            Log.w("adx", "file is not exist,service won't start")
+            Toast.makeText(this, "file is not exist,service won't start", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (_processThreads.value.contains(config)) {
+            Log.w("adx", "frpc is already running")
+            Toast.makeText(this, "frpc is already running", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val ainfo = packageManager.getApplicationInfo(
+            packageName, PackageManager.GET_SHARED_LIBRARY_FILES
+        )
+        val commandList =
+            listOf("${ainfo.nativeLibraryDir}/lib${config.type.typeName}.so", "-c", config.fileName)
+        Log.d("adx", "${dir}\n${commandList}")
+        try {
+            val thread = runCommand(commandList, dir)
+            _processThreads.update { it.toMutableMap().apply { put(config, thread) } }
+        } catch (e: Exception) {
+            Log.e("adx", e.stackTraceToString())
+            Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
+            stopSelf()
+        }
+    }
+
+    private fun stopFrp(config: FrpConfig) {
+        val thread = _processThreads.value.get(config)
+//        thread?.interrupt()
+        thread?.stopProcess()
+        _processThreads.update {
+            it.toMutableMap().apply { remove(config) }
         }
     }
 
@@ -125,15 +140,15 @@ class ShellService : LifecycleService() {
         super.onDestroy()
         if (!_processThreads.value.isEmpty()) {
             _processThreads.value.forEach {
-                it.value.interrupt()
+//                it.value.interrupt()
                 it.value.stopProcess()
             }
             _processThreads.update { it.clear();it }
         }
     }
 
-    private fun runCommand(command: String, envp: Array<String>, dir: File): ShellThread {
-        val process_thread = ShellThread(command, envp, dir) { _logText.value += it + "\n" }
+    private fun runCommand(command: List<String>, dir: File): ShellThread {
+        val process_thread = ShellThread(command, dir) { _logText.value += it + "\n" }
         process_thread.start()
         return process_thread;
     }
@@ -158,15 +173,5 @@ class ShellService : LifecycleService() {
         } else {
             return notification.build()
         }
-    }
-
-    fun stopThread(configFileName: String) {
-        val thread = _processThreads.value.get(configFileName)
-        thread?.interrupt()
-        thread?.stopProcess()
-        _processThreads.update {
-            it.toMutableMap().apply { remove(configFileName) }
-        }
-        startForeground(1, showNotification());
     }
 }
