@@ -36,3 +36,6 @@ The content for ```STORE_FILE``` should be the base64 from step 1, while you sho
 It is obtained directly by extracting the corresponding ABI Linux version archive from [frp's release](https://github.com/fatedier/frp/releases), renaming frpc to libfrpc.so.  
 The project does not invoke methods from the so file within its code but treats the so as an executable file, executing the corresponding command through shell.  
 Due to Golang's zero-dependency characteristic, the executable file can be run directly through shell in Android.
+
+### Start at bootup and background keep-alive
+Designed according to the native Android specification, if there is any problem, please allow boot/background options in the system settings.
