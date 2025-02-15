@@ -57,9 +57,9 @@ class ConfigActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val frpConfig = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent?.extras?.getParcelable("FrpConfig", FrpConfig::class.java)
+            intent?.extras?.getParcelable(IntentExtraKey.FrpConfig, FrpConfig::class.java)
         } else {
-            @Suppress("DEPRECATION") intent?.extras?.getParcelable("FrpConfig")
+            @Suppress("DEPRECATION") intent?.extras?.getParcelable(IntentExtraKey.FrpConfig)
         }
         if (frpConfig == null) {
             Log.e("adx", "frp config is null")
@@ -198,19 +198,20 @@ class ConfigActivity : ComponentActivity() {
 
     fun readIsAutoStart() {
         isAutoStart.value =
-            preferences.getStringSet("auto_start_frpc_list", emptySet())?.contains(configFile.name)
-                ?: false
+            preferences.getStringSet(PreferencesKey.AUTO_START_FRPC_LIST, emptySet())
+                ?.contains(configFile.name) ?: false
     }
 
     fun setAutoStart(value: Boolean) {
         val editor = preferences.edit()
-        val set = preferences.getStringSet("auto_start_frpc_list", emptySet())?.toMutableSet()
+        val set = preferences.getStringSet(PreferencesKey.AUTO_START_FRPC_LIST, emptySet())
+            ?.toMutableSet()
         if (value) {
             set?.add(configFile.name)
         } else {
             set?.remove(configFile.name)
         }
-        editor.putStringSet("auto_start_frpc_list", set)
+        editor.putStringSet(PreferencesKey.AUTO_START_FRPC_LIST, set)
         editor.apply()
         isAutoStart.value = value
     }

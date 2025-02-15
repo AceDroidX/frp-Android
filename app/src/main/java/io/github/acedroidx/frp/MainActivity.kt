@@ -114,7 +114,7 @@ class MainActivity : ComponentActivity() {
 
         frpcDir = File(filesDir, "frpc")
         preferences = getSharedPreferences("data", MODE_PRIVATE)
-        isStartup.value = preferences.getBoolean("auto_start", false)
+        isStartup.value = preferences.getBoolean(PreferencesKey.AUTO_START, false)
 
         checkConfig()
         updateConfigList()
@@ -209,7 +209,7 @@ class MainActivity : ComponentActivity() {
                 Switch(checked = isStartup.collectAsStateWithLifecycle(false).value,
                     onCheckedChange = {
                         val editor = preferences.edit()
-                        editor.putBoolean("auto_start", it)
+                        editor.putBoolean(PreferencesKey.AUTO_START, it)
                         editor.apply()
                         isStartup.value = it
                     })
@@ -301,21 +301,21 @@ class MainActivity : ComponentActivity() {
 
     private fun startConfigActivity(config: FrpConfig) {
         val intent = Intent(this, ConfigActivity::class.java)
-        intent.putExtra("FrpConfig", config)
+        intent.putExtra(IntentExtraKey.FrpConfig, config)
         configActivityLauncher.launch(intent)
     }
 
     private fun startShell(config: FrpConfig) {
         val intent = Intent(this, ShellService::class.java)
         intent.setAction(ShellServiceAction.START)
-        intent.putExtra("FrpConfig", arrayListOf(config))
+        intent.putExtra(IntentExtraKey.FrpConfig, arrayListOf(config))
         startService(intent)
     }
 
     private fun stopShell(config: FrpConfig) {
         val intent = Intent(this, ShellService::class.java)
         intent.setAction(ShellServiceAction.STOP)
-        intent.putExtra("FrpConfig", arrayListOf(config))
+        intent.putExtra(IntentExtraKey.FrpConfig, arrayListOf(config))
         startService(intent)
     }
 
@@ -367,13 +367,13 @@ class MainActivity : ComponentActivity() {
 
         // 检查自启动列表中是否含有已经删除的配置
         val frpcAutoStartList =
-            preferences.getStringSet("auto_start_frpc_list", emptySet())?.filter {
+            preferences.getStringSet(PreferencesKey.AUTO_START_FRPC_LIST, emptySet())?.filter {
                 frpcConfigList.value.contains(
                     FrpConfig(FrpType.FRPC, it)
                 )
             }
         with(preferences.edit()) {
-            putStringSet("auto_start_frpc_list", frpcAutoStartList?.toSet())
+            putStringSet(PreferencesKey.AUTO_START_FRPC_LIST, frpcAutoStartList?.toSet())
             apply()
         }
     }

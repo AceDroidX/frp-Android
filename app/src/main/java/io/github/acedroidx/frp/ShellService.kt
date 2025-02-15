@@ -58,9 +58,11 @@ class ShellService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
         val frpConfig: ArrayList<FrpConfig>? =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent?.extras?.getParcelableArrayList("FrpConfig", FrpConfig::class.java)
+                intent?.extras?.getParcelableArrayList(
+                    IntentExtraKey.FrpConfig, FrpConfig::class.java
+                )
             } else {
-                @Suppress("DEPRECATION") intent?.extras?.getParcelable("FrpConfig")
+                @Suppress("DEPRECATION") intent?.extras?.getParcelable(IntentExtraKey.FrpConfig)
             }
         if (frpConfig == null) {
             Log.e("adx", "frpConfig is null")
