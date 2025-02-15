@@ -17,11 +17,12 @@ class AutoStartBroadReceiver : BroadcastReceiver() {
             val frpsConfigSet = editor.getStringSet("auto_start_frps_list", emptySet())
             val frpcConfigList = frpcConfigSet?.map { FrpConfig(FrpType.FRPC, it) }
             val frpsConfigList = frpsConfigSet?.map { FrpConfig(FrpType.FRPS, it) }
-            val configList = frpsConfigList?.let { frpcConfigList?.let { it1 -> it + it1 } }
+            val configList = (frpsConfigList ?: emptyList()) + (frpcConfigList ?: emptyList())
+            if (configList.isEmpty()) return
             //开机启动
             val mainIntent = Intent(context, ShellService::class.java)
             mainIntent.setAction(ShellServiceAction.START)
-            mainIntent.putParcelableArrayListExtra("FrpConfig", configList?.let { ArrayList(it) })
+            mainIntent.putParcelableArrayListExtra("FrpConfig", ArrayList(configList))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(mainIntent)
             } else {
