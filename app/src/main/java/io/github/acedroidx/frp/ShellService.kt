@@ -109,15 +109,15 @@ class ShellService : LifecycleService() {
             return
         }
         if (_processThreads.value.contains(config)) {
-            Log.w("adx", "frpc is already running")
-            Toast.makeText(this, "frpc is already running", Toast.LENGTH_SHORT).show()
+            Log.w("adx", "frp is already running")
+            Toast.makeText(this, "frp is already running", Toast.LENGTH_SHORT).show()
             return
         }
         val ainfo = packageManager.getApplicationInfo(
             packageName, PackageManager.GET_SHARED_LIBRARY_FILES
         )
         val commandList =
-            listOf("${ainfo.nativeLibraryDir}/lib${config.type.typeName}.so", "-c", config.fileName)
+            listOf("${ainfo.nativeLibraryDir}/${config.type.getLibName()}", "-c", config.fileName)
         Log.d("adx", "${dir}\n${commandList}")
         try {
             val thread = runCommand(commandList, dir)
@@ -162,9 +162,9 @@ class ShellService : LifecycleService() {
             }
         val notification = NotificationCompat.Builder(this, "shell_bg")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(getString(R.string.frpc_notification_title)).setContentText(
+            .setContentTitle(getString(R.string.frp_notification_title)).setContentText(
                 getString(
-                    R.string.frpc_notification_content, _processThreads.value.size
+                    R.string.frp_notification_content, _processThreads.value.size
                 )
             )
             //.setTicker("test")

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -50,6 +51,7 @@ class ConfigActivity : ComponentActivity() {
     private val configEditText = MutableStateFlow("")
     private val isAutoStart = MutableStateFlow(false)
     private lateinit var configFile: File
+    private lateinit var autoStartPreferencesKey: String
     private lateinit var preferences: SharedPreferences
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +71,7 @@ class ConfigActivity : ComponentActivity() {
             return
         }
         configFile = frpConfig.getFile(this)
+        autoStartPreferencesKey = frpConfig.type.getAutoStartPreferencesKey()
         preferences = getSharedPreferences("data", MODE_PRIVATE)
         readConfig()
         readIsAutoStart()
@@ -100,7 +103,11 @@ class ConfigActivity : ComponentActivity() {
     @Composable
     fun MainContent() {
         val openDialog = remember { mutableStateOf(false) }
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -198,20 +205,19 @@ class ConfigActivity : ComponentActivity() {
 
     fun readIsAutoStart() {
         isAutoStart.value =
-            preferences.getStringSet(PreferencesKey.AUTO_START_FRPC_LIST, emptySet())
-                ?.contains(configFile.name) ?: false
+            preferences.getStringSet(autoStartPreferencesKey, emptySet())?.contains(configFile.name)
+                ?: false
     }
 
     fun setAutoStart(value: Boolean) {
         val editor = preferences.edit()
-        val set = preferences.getStringSet(PreferencesKey.AUTO_START_FRPC_LIST, emptySet())
-            ?.toMutableSet()
+        val set = preferences.getStringSet(autoStartPreferencesKey, emptySet())?.toMutableSet()
         if (value) {
             set?.add(configFile.name)
         } else {
             set?.remove(configFile.name)
         }
-        editor.putStringSet(PreferencesKey.AUTO_START_FRPC_LIST, set)
+        editor.putStringSet(autoStartPreferencesKey, set)
         editor.apply()
         isAutoStart.value = value
     }

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="state_switch">启动frpc服务</string>
     <string name="auto_start_switch">开机自启动</string>
     <string name="addConfigButton">添加配置</string>
     <string name="aboutButton">关于</string>
@@ -14,12 +13,13 @@
     <string name="notification_channel_desc">frp后台服务通知</string>
     <string name="service_start_toast">已启动frp服务</string>
     <string name="service_stop_toast">已关闭frp服务</string>
-    <string name="frpc_notification_title">frpc后台服务</string>
-    <string name="frpc_notification_content">已启动%d个frpc</string>
+    <string name="frp_notification_title">frp后台服务</string>
+    <string name="frp_notification_content">已启动%d个frp配置</string>
     <string name="copy">复制</string>
     <string name="copied">已复制</string>
     <string name="no_config">没有配置，点击按钮去添加一个！</string>
     <string name="rename">重命名</string>
     <string name="confirm">确认</string>
     <string name="dismiss">取消</string>
+    <string name="create_frp_select">选择要创建的frp类型</string>
 </resources>

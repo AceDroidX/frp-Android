@@ -15,7 +15,7 @@ data class FrpConfig(
     }
 
     fun getDir(context: Context): File {
-        return File(context.filesDir, this.type.typeName)
+        return this.type.getDir(context)
     }
 
     fun getFile(context: Context): File {
