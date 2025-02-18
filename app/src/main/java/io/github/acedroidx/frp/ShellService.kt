@@ -62,7 +62,7 @@ class ShellService : LifecycleService() {
                     IntentExtraKey.FrpConfig, FrpConfig::class.java
                 )
             } else {
-                @Suppress("DEPRECATION") intent?.extras?.getParcelable(IntentExtraKey.FrpConfig)
+                @Suppress("DEPRECATION") intent?.extras?.getParcelableArrayList(IntentExtraKey.FrpConfig)
             }
         if (frpConfig == null) {
             Log.e("adx", "frpConfig is null")
