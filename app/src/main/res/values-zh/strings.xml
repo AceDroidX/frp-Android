@@ -65,7 +65,7 @@
     <string name="config_write_title">允许其他应用写入配置</string>
     <string name="config_read_help">通过 ContentProvider 提供只读访问。仅在信任请求方时开启，配置文件可能包含敏感凭据。</string>
     <string name="config_write_help">允许其他应用通过 ContentProvider 修改配置。请谨慎开启，错误写入可能导致 frp 连接异常。</string>
-    <string name="config_io_help_message">使用前请在「设置 -> frp 配置读写接口」开启读/写开关，注意可能的配置密码泄露等安全风险。\n\n使用示例：\n\n# 列出全部配置（需要开启“允许读取”）\nadb shell content query --uri content://io.github.acedroidx.frp.config\n\n# 读取单个配置（需要开启“允许读取”）\nadb shell content read --uri content://io.github.acedroidx.frp.config/frpc/example.toml\n\n# 写入单个配置（需要开启“允许写入”）\n# 将本地 example.toml 覆盖写入设备上的配置文件\nadb shell content write --uri content://io.github.acedroidx.frp.config/frpc/example.toml &lt; example.toml</string>
+    <string name="config_io_help_message">使用前请在「设置 -> frp 配置读写接口」开启读/写开关，注意可能的配置密码泄露等安全风险。\n\n使用示例：\n\n# 列出全部配置（需要开启“允许读取”）\nadb shell content query --uri content://io.github.acedroidx.frp.config\n\n# 读取单个配置（需要开启“允许读取”）\nadb shell content read --uri content://io.github.acedroidx.frp.config/frpc/example.toml\n\n# 写入单个配置（需要开启“允许写入”）\n# 将本地 example.toml 覆盖写入设备上的配置文件，部分设备可能需要先执行删除命令再写入\nadb shell content write --uri content://io.github.acedroidx.frp.config/frpc/example.toml &lt; example.toml\n\n# 删除单个配置（需要开启“允许写入”）\nadb shell content delete --uri content://io.github.acedroidx.frp.config/frpc/example.toml</string>
     <string name="about_app_author">App 作者 (AceDroidX)：</string>
     <string name="about_contributors">非常感谢以下作者对 App 开发所做的贡献：</string>
     <string name="about_contributor_ahsaboy">ahsaboy: 添加应用图标、快捷开关、Tasker集成并优化了诸多功能</string>

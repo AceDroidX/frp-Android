@@ -91,8 +91,11 @@ adb shell content query --uri content://io.github.acedroidx.frp.config
 adb shell content read --uri content://io.github.acedroidx.frp.config/frpc/example.toml
 
 # Write a single config (requires "Allow write")
-# Overwrite the device config with local example.toml
+# Overwrite the device config with local example.toml; some devices may require deleting first before writing.
 adb shell content write --uri content://io.github.acedroidx.frp.config/frpc/example.toml < example.toml
+
+# Delete a single config (requires "Allow write")
+adb shell content delete --uri content://io.github.acedroidx.frp.config/frpc/example.toml
 ```
 
 - In-app quick validation: long-press the config edit button on the main list to open the config with a third-party app via ContentProvider (requires read/write switches enabled).

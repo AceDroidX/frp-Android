@@ -122,7 +122,36 @@ class FrpConfigProvider : ContentProvider() {
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int {
-        throw UnsupportedOperationException("Delete not supported")
+        val context = context ?: return 0
+        val prefs = context.getSharedPreferences("data", android.content.Context.MODE_PRIVATE)
+        val match = uriMatcher.match(uri)
+
+        // 删除属于写操作，必须显式允许
+        if (!prefs.getBoolean(PreferencesKey.ALLOW_CONFIG_WRITE, false)) {
+            throw SecurityException("Config write not allowed")
+        }
+
+        return when (match) {
+            CODE_CONFIG_ITEM -> {
+                val type = uri.pathSegments.getOrNull(0)
+                val name = uri.pathSegments.getOrNull(1)
+                if (type.isNullOrBlank() || name.isNullOrBlank()) {
+                    return 0
+                }
+                val frpType = AutoStartHelper.parseType(type) ?: return 0
+                val file = File(frpType.getDir(context), name)
+                val deleted = if (file.exists()) file.delete() else false
+                if (deleted) {
+                    context.contentResolver.notifyChange(uri, null)
+                    1
+                } else {
+                    0
+                }
+            }
+
+            CODE_CONFIGS -> 0
+            else -> throw FileNotFoundException("Unknown URI: $uri")
+        }
     }
 
     override fun update(

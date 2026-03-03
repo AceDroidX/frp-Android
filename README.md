@@ -89,8 +89,11 @@ adb shell content query --uri content://io.github.acedroidx.frp.config
 adb shell content read --uri content://io.github.acedroidx.frp.config/frpc/example.toml
 
 # 写入单个配置（需要开启“允许写入”）
-# 将本地 example.toml 覆盖写入设备上的配置文件
+# 将本地 example.toml 覆盖写入设备上的配置文件，部分设备可能需要先执行删除命令再写入
 adb shell content write --uri content://io.github.acedroidx.frp.config/frpc/example.toml < example.toml
+
+# 删除单个配置（需要开启“允许写入”）
+adb shell content delete --uri content://io.github.acedroidx.frp.config/frpc/example.toml
 ```
 
 - 应用内快速验证：在主页配置列表长按“编辑”按钮，会用第三方应用通过 ContentProvider 打开该配置文件，同样需要先在设置中开启读/写开关。
