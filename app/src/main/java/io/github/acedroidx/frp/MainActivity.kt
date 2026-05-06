@@ -413,7 +413,6 @@ class MainActivity : ComponentActivity() {
                             startShell(config)
                         } else {
                             stopShell(config)
-                            showLog.value = false  // 关闭时自动收起日志
                         }
                     })
                 }
