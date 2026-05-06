@@ -4,9 +4,11 @@ import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.ActivityNotFoundException
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -57,6 +59,7 @@ class OnboardingActivity : ComponentActivity() {
     private val themeMode = MutableStateFlow(ThemeModeKeys.FOLLOW_SYSTEM)
     private val notificationPermissionGranted = MutableStateFlow(true)
     private val ignoringBatteryOptimizations = MutableStateFlow(false)
+    private val storagePermissionGranted = MutableStateFlow(false)
 
     private lateinit var preferences: SharedPreferences
 
@@ -67,12 +70,25 @@ class OnboardingActivity : ComponentActivity() {
         notificationPermissionGranted.value = granted
     }
 
+    // 存储权限请求：Android 11+ 跳转到全部文件访问授权页，低版本使用运行时权限
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        storagePermissionGranted.value = granted
+    }
+
     // 电池优化豁免申请
     private val batteryOptimizationLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
         // 回到应用后更新当前状态，避免用户手动取消时状态错误
         updateBatteryOptimizationStatus()
+    }
+
+    private val manageStoragePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        updateStoragePermissionStatus()
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -85,6 +101,7 @@ class OnboardingActivity : ComponentActivity() {
 
         updateNotificationPermissionStatus()
         updateBatteryOptimizationStatus()
+        updateStoragePermissionStatus()
 
         enableEdgeToEdge()
         setContent {
@@ -93,6 +110,7 @@ class OnboardingActivity : ComponentActivity() {
                 true
             )
             val batteryIgnored by ignoringBatteryOptimizations.collectAsStateWithLifecycle(false)
+            val storageGranted by storagePermissionGranted.collectAsStateWithLifecycle(false)
 
             FrpTheme(themeMode = currentTheme) {
                 Scaffold(topBar = {
@@ -111,8 +129,10 @@ class OnboardingActivity : ComponentActivity() {
                         contentPadding = contentPadding,
                         notificationGranted = notificationGranted,
                         batteryOptimizationIgnored = batteryIgnored,
+                        storagePermissionGranted = storageGranted,
                         onRequestNotificationPermission = { requestNotificationPermission() },
                         onRequestBatteryOptimization = { requestIgnoreBatteryOptimization() },
+                        onRequestStoragePermission = { requestStoragePermission() },
                         onContinue = { finishOnboarding() })
                 }
             }
@@ -137,10 +157,44 @@ class OnboardingActivity : ComponentActivity() {
             powerManager.isIgnoringBatteryOptimizations(packageName)
     }
 
+    private fun updateStoragePermissionStatus() {
+        storagePermissionGranted.value = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> Environment.isExternalStorageManager()
+            else -> ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+    }
+
+    private fun requestStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+                manageStoragePermissionLauncher.launch(intent)
+            } catch (e: ActivityNotFoundException) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                    manageStoragePermissionLauncher.launch(intent)
+                } catch (inner: ActivityNotFoundException) {
+                    Log.w(
+                        "Onboarding",
+                        "Storage permission settings activity not found: ${inner.message}"
+                    )
+                }
+            }
+            return
+        }
+
+        storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
     private fun requestIgnoreBatteryOptimization() {
@@ -220,13 +274,16 @@ class OnboardingActivity : ComponentActivity() {
         contentPadding: PaddingValues,
         notificationGranted: Boolean,
         batteryOptimizationIgnored: Boolean,
+        storagePermissionGranted: Boolean,
         onRequestNotificationPermission: () -> Unit,
         onRequestBatteryOptimization: () -> Unit,
+        onRequestStoragePermission: () -> Unit,
         onContinue: () -> Unit
     ) {
         val scrollState = rememberScrollState()
         val showNotificationAction = remember(notificationGranted) { !notificationGranted }
         val showBatteryAction = remember(batteryOptimizationIgnored) { !batteryOptimizationIgnored }
+        val showStorageAction = remember(storagePermissionGranted) { !storagePermissionGranted }
 
         Column(
             modifier = Modifier
@@ -270,6 +327,20 @@ class OnboardingActivity : ComponentActivity() {
                 enabled = showBatteryAction
             )
 
+            OnboardingCard(
+                title = stringResource(R.string.onboarding_storage_title),
+                description = stringResource(R.string.onboarding_storage_desc),
+                status = {
+                    StatusText(
+                        active = storagePermissionGranted,
+                        inactiveText = stringResource(R.string.onboarding_storage_status_missing)
+                    )
+                },
+                actionLabel = stringResource(R.string.onboarding_storage_action),
+                onAction = onRequestStoragePermission,
+                enabled = showStorageAction
+            )
+
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
@@ -290,8 +361,10 @@ class OnboardingActivity : ComponentActivity() {
                 contentPadding = PaddingValues(0.dp),
                 notificationGranted = false,
                 batteryOptimizationIgnored = false,
+                storagePermissionGranted = false,
                 onRequestNotificationPermission = {},
                 onRequestBatteryOptimization = {},
+                onRequestStoragePermission = {},
                 onContinue = {})
         }
     }

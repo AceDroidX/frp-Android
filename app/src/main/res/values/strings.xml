@@ -106,6 +106,10 @@
     <string name="onboarding_battery_desc">Allow frp to ignore battery optimizations so the service is less likely to be killed.</string>
     <string name="onboarding_battery_status_missing">Battery optimizations may stop background service</string>
     <string name="onboarding_battery_action">Request optimization exemption</string>
+    <string name="onboarding_storage_title">(Optional) Grant storage permission</string>
+    <string name="onboarding_storage_desc">Grant this permission if your frp configuration references certificate, key, or other files stored on the device.\n\nIf you do not use such files, you can skip this step and grant permission later when needed.</string>
+    <string name="onboarding_storage_status_missing">Not granted. Configs that reference certificate files may not work.</string>
+    <string name="onboarding_storage_action">Grant storage permission</string>
     <string name="onboarding_status_done">Done</string>
     <string name="onboarding_continue">Continue</string>
     <string name="settings_reopen_onboarding">Reopen welcome onboarding</string>

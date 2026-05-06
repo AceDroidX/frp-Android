@@ -1,0 +1,14 @@
+# frps 配置示例 - 自定义 TLS 协议加密
+# https://gofrp.org/zh-cn/docs/features/common/network/network-tls/
+bindPort = 7000
+
+# 服务端证书
+transport.tls.certFile = "/sdcard/server.crt"
+transport.tls.keyFile = "/sdcard/server.key"
+transport.tls.trustedCaFile = "/sdcard/ca.crt"
+# 是否只接受启用了 TLS 的客户端连接
+transport.tls.force = true
+
+[log]
+level = "debug"
+disablePrintColor = true

@@ -1,0 +1,14 @@
+# frps configuration example - custom TLS encryption
+# https://gofrp.org/zh-cn/docs/features/common/network/network-tls/
+bindPort = 7000
+
+# Server certificate
+transport.tls.certFile = "/sdcard/server.crt"
+transport.tls.keyFile = "/sdcard/server.key"
+transport.tls.trustedCaFile = "/sdcard/ca.crt"
+# Whether to accept only client connections with TLS enabled
+transport.tls.force = true
+
+[log]
+level = "debug"
+disablePrintColor = true

@@ -105,6 +105,10 @@
     <string name="onboarding_battery_desc">将应用加入电池优化白名单，减少后台被清理的概率。</string>
     <string name="onboarding_battery_status_missing">电池优化可能限制后台运行</string>
     <string name="onboarding_battery_action">申请忽略电池优化</string>
+    <string name="onboarding_storage_title">（可选）授予存储权限</string>
+    <string name="onboarding_storage_desc">如果你的 frp 配置引用了设备存储中的证书、密钥或其他文件，请授予此权限。\n\n如果你不使用这类文件，可以跳过，后续在需要时再授权。</string>
+    <string name="onboarding_storage_status_missing">未授予，引用证书文件的配置可能无法使用</string>
+    <string name="onboarding_storage_action">授予存储权限</string>
     <string name="onboarding_status_done">已完成</string>
     <string name="onboarding_continue">完成</string>
     <string name="settings_reopen_onboarding">重新打开首次使用引导</string>

@@ -1,0 +1,22 @@
+# tcp 转发示例 - 自定义 TLS 协议加密
+# https://gofrp.org/zh-cn/docs/features/common/network/network-tls/
+serverAddr = ""
+serverPort = 7000
+dnsServer = "114.114.114.114"
+loginFailExit = false
+
+# 客户端证书
+transport.tls.certFile = "/sdcard/client.crt"
+transport.tls.keyFile = "/sdcard/client.key"
+transport.tls.trustedCaFile = "/sdcard/ca.crt"
+
+[log]
+level = "debug"
+disablePrintColor = true
+
+[[proxies]]
+name = "ssh"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 22
+remotePort = 6000
