@@ -1,11 +1,62 @@
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.ApkSigningConfig
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import com.android.build.api.variant.BuiltArtifactsLoader
+import com.android.build.api.variant.FilterConfiguration.FilterType.ABI
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.kotlin.dsl.register
+import java.io.File
 import java.io.FileInputStream
 import java.util.Properties
 
+abstract class CopyRenamedApksTask : DefaultTask() {
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val input: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @get:Input
+    abstract val versionName: Property<String>
+
+    @get:Internal
+    abstract val builtArtifactsLoader: Property<BuiltArtifactsLoader>
+
+    @TaskAction
+    fun copyRenamedApks() {
+        val outputDirectory = output.get().asFile
+        outputDirectory.deleteRecursively()
+        outputDirectory.mkdirs()
+
+        val builtArtifacts = builtArtifactsLoader.get().load(input.get())
+            ?: throw GradleException("Cannot load APK metadata from ${input.get().asFile}")
+
+        builtArtifacts.elements.forEach { artifact ->
+            val abi = artifact.filters.find { it.filterType == ABI }?.identifier ?: "universal"
+            val resolvedVersionName = artifact.versionName?.takeIf { it.isNotBlank() } ?: versionName.get()
+
+            // AGP 9 不再支持通过旧 Variant API 直接修改 APK 文件名，这里在产物生成后复制一份约定命名的 APK。
+            File(artifact.outputFile).copyTo(
+                target = outputDirectory.resolve("frp_${abi}_${resolvedVersionName}.apk"),
+                overwrite = true,
+            )
+        }
+    }
+}
+
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.parcelize")
 }
@@ -108,11 +159,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
-        }
-    }
     packaging {
         jniLibs {
             useLegacyPackaging = true
@@ -128,20 +174,26 @@ android {
     }
     namespace = "io.github.acedroidx.frp"
 
-    applicationVariants.all {
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            val abiFilter = output.filters.find { it.filterType == "ABI" }
-            val abi = abiFilter?.identifier ?: "universal"
-            val versionName = defaultConfig.versionName
-            output.outputFileName = "frp_${abi}_${versionName}.apk"
+}
+
+androidComponents {
+    onVariants { variant ->
+        val taskName = "copyRenamedApksFor${variant.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}"
+        val copyRenamedApks = tasks.register<CopyRenamedApksTask>(taskName) {
+            output.set(layout.buildDirectory.dir("outputs/renamed_apks/${variant.name}"))
+            versionName.set(variant.outputs.first().versionName)
+            builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
         }
+
+        variant.artifacts.use(copyRenamedApks).wiredWith {
+            it.input
+        }.toListenTo(SingleArtifact.APK)
     }
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.21")
-    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
+    implementation("androidx.core:core-ktx:1.18.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
@@ -150,7 +202,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-service:2.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
-    val composeBom = platform("androidx.compose:compose-bom:2025.12.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.04.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
     implementation("androidx.compose.material3:material3")

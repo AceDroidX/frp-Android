@@ -74,8 +74,8 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
           set -euo pipefail
-          echo "Signing apks in app/build/outputs/apk/release/ with key rotation"
-          ls -la app/build/outputs/apk/release/
+          echo "Signing apks in app/build/outputs/renamed_apks/release/ with key rotation"
+          ls -la app/build/outputs/renamed_apks/release/
           # Sanity checks:
           if [ ! -f keystore.jks ]; then
             echo "keystore.jks not found" >&2
@@ -95,7 +95,7 @@ jobs:
 
           # Make for-loop not expand unmatched globs to literal value (bash only)
           shopt -s nullglob
-          for apk in app/build/outputs/apk/release/*.apk; do
+          for apk in app/build/outputs/renamed_apks/release/*.apk; do
             if [ -z "$apk" ]; then
               echo "No APKs found to sign, skipping"
               break
@@ -119,29 +119,29 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frp-Android-arm64-v8a
-          path: app/build/outputs/apk/release/*arm64-v8a*.apk
+          path: app/build/outputs/renamed_apks/release/frp_arm64-v8a_*.apk
 
       - name: Upload armeabi-v7a APK
         uses: actions/upload-artifact@v4
         with:
           name: frp-Android-armeabi-v7a
-          path: app/build/outputs/apk/release/*armeabi-v7a*.apk
+          path: app/build/outputs/renamed_apks/release/frp_armeabi-v7a_*.apk
 
       - name: Upload x86_64 APK
         uses: actions/upload-artifact@v4
         with:
           name: frp-Android-x86_64
-          path: app/build/outputs/apk/release/*x86_64*.apk
+          path: app/build/outputs/renamed_apks/release/frp_x86_64_*.apk
 
       - name: Upload universal APK
         uses: actions/upload-artifact@v4
         with:
           name: frp-Android-universal
-          path: app/build/outputs/apk/release/*universal*.apk
+          path: app/build/outputs/renamed_apks/release/frp_universal_*.apk
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/*.apk
+          files: app/build/outputs/renamed_apks/release/*.apk
           generate_release_notes: true

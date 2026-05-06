@@ -49,7 +49,7 @@ class FrpConfigProvider : ContentProvider() {
                 FrpType.entries.forEach { type ->
                     val names = type.getDir(context).list()?.toList() ?: emptyList()
                     names.forEach { name ->
-                        cursor.addRow(arrayOf(id++, type.typeName, name))
+                        cursor.addRow(arrayOf<Any>(id++, type.typeName, name))
                     }
                 }
             }
@@ -64,7 +64,7 @@ class FrpConfigProvider : ContentProvider() {
                 if (frpType != null) {
                     val file = File(frpType.getDir(context), name)
                     if (file.exists()) {
-                        cursor.addRow(arrayOf(0L, frpType.typeName, name))
+                        cursor.addRow(arrayOf<Any>(0L, frpType.typeName, name))
                     }
                 }
             }
