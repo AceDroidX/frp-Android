@@ -1,5 +1,5 @@
 # frps configuration example
-# https://gofrp.org/zh-cn/docs/examples/ssh/
+# https://gofrp.org/en/docs/examples/ssh/
 bindPort = 7000
 
 [log]

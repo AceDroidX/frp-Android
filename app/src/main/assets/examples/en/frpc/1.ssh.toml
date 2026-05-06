@@ -1,5 +1,5 @@
 # TCP forwarding example
-# https://gofrp.org/zh-cn/docs/examples/ssh/
+# https://gofrp.org/en/docs/examples/ssh/
 serverAddr = ""
 serverPort = 7000
 dnsServer = "114.114.114.114"

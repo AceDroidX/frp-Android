@@ -1,5 +1,5 @@
 # stcp forwarding example - client side
-# https://gofrp.org/zh-cn/docs/examples/stcp/
+# https://gofrp.org/en/docs/examples/stcp/
 serverAddr = ""
 serverPort = 7000
 dnsServer = "114.114.114.114"

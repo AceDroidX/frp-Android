@@ -1,5 +1,5 @@
 # TCP forwarding example - custom TLS encryption
-# https://gofrp.org/zh-cn/docs/features/common/network/network-tls/
+# https://gofrp.org/en/docs/features/common/network/network-tls/
 serverAddr = ""
 serverPort = 7000
 dnsServer = "114.114.114.114"

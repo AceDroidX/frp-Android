@@ -1,5 +1,5 @@
 # xtcp forwarding example - server side
-# https://gofrp.org/zh-cn/docs/examples/xtcp/
+# https://gofrp.org/en/docs/examples/xtcp/
 serverAddr = ""
 serverPort = 7000
 dnsServer = "114.114.114.114"
