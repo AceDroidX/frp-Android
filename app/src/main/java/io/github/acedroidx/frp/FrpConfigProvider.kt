@@ -111,10 +111,20 @@ class FrpConfigProvider : ContentProvider() {
             dir.mkdirs()
         }
         val file = File(dir, name)
+        val isNew = isWrite && !file.exists()
         if (!isWrite && !file.exists()) {
             throw FileNotFoundException("File not found")
         }
-        return ParcelFileDescriptor.open(file, modeBits)
+        val pfd = ParcelFileDescriptor.open(file, modeBits)
+        // 通过接口写入新配置时，默认开启自启动
+        if (isNew) {
+            val autoStartKey = frpType.getAutoStartPreferencesKey()
+            val set = prefs.getStringSet(autoStartKey, emptySet())?.toMutableSet()
+                ?: mutableSetOf()
+            set.add(name)
+            prefs.edit().putStringSet(autoStartKey, set).apply()
+        }
+        return pfd
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
