@@ -60,6 +60,7 @@ class OnboardingActivity : ComponentActivity() {
     private val notificationPermissionGranted = MutableStateFlow(true)
     private val ignoringBatteryOptimizations = MutableStateFlow(false)
     private val storagePermissionGranted = MutableStateFlow(false)
+    private val localNetworkPermissionGranted = MutableStateFlow(true)
 
     private lateinit var preferences: SharedPreferences
 
@@ -91,6 +92,13 @@ class OnboardingActivity : ComponentActivity() {
         updateStoragePermissionStatus()
     }
 
+    // 局域网权限请求：Android 17+ 需要此权限才能访问局域网资源
+    private val localNetworkPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        localNetworkPermissionGranted.value = granted
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +110,7 @@ class OnboardingActivity : ComponentActivity() {
         updateNotificationPermissionStatus()
         updateBatteryOptimizationStatus()
         updateStoragePermissionStatus()
+        updateLocalNetworkPermissionStatus()
 
         enableEdgeToEdge()
         setContent {
@@ -111,6 +120,7 @@ class OnboardingActivity : ComponentActivity() {
             )
             val batteryIgnored by ignoringBatteryOptimizations.collectAsStateWithLifecycle(false)
             val storageGranted by storagePermissionGranted.collectAsStateWithLifecycle(false)
+            val localNetworkGranted by localNetworkPermissionGranted.collectAsStateWithLifecycle(true)
 
             FrpTheme(themeMode = currentTheme) {
                 Scaffold(topBar = {
@@ -130,9 +140,11 @@ class OnboardingActivity : ComponentActivity() {
                         notificationGranted = notificationGranted,
                         batteryOptimizationIgnored = batteryIgnored,
                         storagePermissionGranted = storageGranted,
+                        localNetworkPermissionGranted = localNetworkGranted,
                         onRequestNotificationPermission = { requestNotificationPermission() },
                         onRequestBatteryOptimization = { requestIgnoreBatteryOptimization() },
                         onRequestStoragePermission = { requestStoragePermission() },
+                        onRequestLocalNetworkPermission = { requestLocalNetworkPermission() },
                         onContinue = { finishOnboarding() })
                 }
             }
@@ -167,6 +179,19 @@ class OnboardingActivity : ComponentActivity() {
         }
     }
 
+    // Android 17 (SDK 37) 及以上需要 ACCESS_LOCAL_NETWORK 权限才能访问局域网
+    // 低版本无需此权限，默认视为已授予
+    private fun updateLocalNetworkPermissionStatus() {
+        if (Build.VERSION.SDK_INT >= 37) {
+            val granted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_LOCAL_NETWORK
+            ) == PackageManager.PERMISSION_GRANTED
+            localNetworkPermissionGranted.value = granted
+        } else {
+            localNetworkPermissionGranted.value = true
+        }
+    }
+
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -195,6 +220,12 @@ class OnboardingActivity : ComponentActivity() {
         }
 
         storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+
+    private fun requestLocalNetworkPermission() {
+        if (Build.VERSION.SDK_INT >= 37) {
+            localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        }
     }
 
     private fun requestIgnoreBatteryOptimization() {
@@ -275,15 +306,18 @@ class OnboardingActivity : ComponentActivity() {
         notificationGranted: Boolean,
         batteryOptimizationIgnored: Boolean,
         storagePermissionGranted: Boolean,
+        localNetworkPermissionGranted: Boolean,
         onRequestNotificationPermission: () -> Unit,
         onRequestBatteryOptimization: () -> Unit,
         onRequestStoragePermission: () -> Unit,
+        onRequestLocalNetworkPermission: () -> Unit,
         onContinue: () -> Unit
     ) {
         val scrollState = rememberScrollState()
         val showNotificationAction = remember(notificationGranted) { !notificationGranted }
         val showBatteryAction = remember(batteryOptimizationIgnored) { !batteryOptimizationIgnored }
         val showStorageAction = remember(storagePermissionGranted) { !storagePermissionGranted }
+        val showLocalNetworkAction = remember(localNetworkPermissionGranted) { !localNetworkPermissionGranted }
 
         Column(
             modifier = Modifier
@@ -297,6 +331,20 @@ class OnboardingActivity : ComponentActivity() {
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Start
+            )
+
+            OnboardingCard(
+                title = stringResource(R.string.onboarding_local_network_title),
+                description = stringResource(R.string.onboarding_local_network_desc),
+                status = {
+                    StatusText(
+                        active = localNetworkPermissionGranted,
+                        inactiveText = stringResource(R.string.onboarding_local_network_status_missing)
+                    )
+                },
+                actionLabel = stringResource(R.string.onboarding_local_network_action),
+                onAction = onRequestLocalNetworkPermission,
+                enabled = showLocalNetworkAction
             )
 
             OnboardingCard(
@@ -362,9 +410,11 @@ class OnboardingActivity : ComponentActivity() {
                 notificationGranted = false,
                 batteryOptimizationIgnored = false,
                 storagePermissionGranted = false,
+                localNetworkPermissionGranted = false,
                 onRequestNotificationPermission = {},
                 onRequestBatteryOptimization = {},
                 onRequestStoragePermission = {},
+                onRequestLocalNetworkPermission = {},
                 onContinue = {})
         }
     }

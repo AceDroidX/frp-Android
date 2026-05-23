@@ -1,11 +1,13 @@
 package io.github.acedroidx.frp
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.core.content.edit
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
@@ -149,6 +152,11 @@ class MainActivity : ComponentActivity() {
             updateConfigList()
         }
 
+    // Android 17+ 每次启动时检查局域网权限
+    private val localNetworkPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -167,6 +175,16 @@ class MainActivity : ComponentActivity() {
             startActivity(Intent(this, OnboardingActivity::class.java))
             finish()
             return
+        }
+
+        // Android 17 (SDK 37) 及以上每次启动时检查局域网权限
+        if (Build.VERSION.SDK_INT >= 37) {
+            val granted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_LOCAL_NETWORK
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+            }
         }
 
         // 应用"最近任务中排除"设置

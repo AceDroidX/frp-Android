@@ -111,6 +111,10 @@
     <string name="onboarding_storage_action">授予存储权限</string>
     <string name="onboarding_status_done">已完成</string>
     <string name="onboarding_continue">完成</string>
+    <string name="onboarding_local_network_title">授予本地网络权限</string>
+    <string name="onboarding_local_network_desc">frp 需要访问本地网络来建立隧道。在 Android 17 及以上，此权限是访问局域网资源的必要条件。</string>
+    <string name="onboarding_local_network_status_missing">本地网络权限未授予，frp 无法访问局域网。</string>
+    <string name="onboarding_local_network_action">授予本地网络权限</string>
     <string name="settings_reopen_onboarding">重新打开首次使用引导</string>
     <string name="backup_title">配置与设置备份</string>
     <string name="backup_import_button">导入备份</string>

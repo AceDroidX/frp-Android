@@ -122,8 +122,8 @@ android {
     defaultConfig {
         applicationId = "io.github.acedroidx.frp"
         minSdk = 23
-        targetSdk = 36
-        compileSdk = 36
+        targetSdk = 37
+        compileSdk = 37
         versionCode = 21
         versionName = "1.3.1"
 

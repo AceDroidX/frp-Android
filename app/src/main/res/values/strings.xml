@@ -112,6 +112,10 @@
     <string name="onboarding_storage_action">Grant storage permission</string>
     <string name="onboarding_status_done">Done</string>
     <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_local_network_title">Grant local network permission</string>
+    <string name="onboarding_local_network_desc">frp needs access to the local network to establish tunnels. On Android 17+, this permission is required for any local network communication.</string>
+    <string name="onboarding_local_network_status_missing">Local network permission not granted. frp cannot access the local network.</string>
+    <string name="onboarding_local_network_action">Grant local network permission</string>
     <string name="settings_reopen_onboarding">Reopen welcome onboarding</string>
     <string name="backup_title">Backup &amp; Restore</string>
     <string name="backup_import_button">Import Backup</string>
