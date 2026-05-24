@@ -8,6 +8,7 @@
 
 先决条件
 - Go 工具链
+- Node.js & npm
 - Android NDK（需设置 `NDK_ROOT` 环境变量）
 - frp 源代码（需设置 `FRP_ROOT` 环境变量）
 - frp-Android 源代码（需设置 `FRP_ANDROID_ROOT` 环境变量）

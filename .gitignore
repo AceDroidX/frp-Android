@@ -92,4 +92,4 @@ keystore.properties
 baselineProfiles/
 TASKER_PLUGIN_DEVELOPMENT_GUIDE.md
 app/src/main/jniLibs/
-.devcontainer
+.devcontainer/devcontainer.json

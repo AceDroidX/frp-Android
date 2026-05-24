@@ -8,6 +8,7 @@ Script `build_frp_binaries.sh` uses Go cross-compilation to build Android native
 
 Prerequisites
 - Go toolchain
+- Node.js & npm
 - Android NDK (set `NDK_ROOT` environment variable)
 - frp source code (set `FRP_ROOT` environment variable)
 - frp-Android source code (set `FRP_ANDROID_ROOT` environment variable)
