@@ -14,19 +14,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout frp-Android repo
+        uses: actions/checkout@v6
+      - name: Checkout frp repo
+        uses: actions/checkout@v6
+        with:
+          repository: fatedier/frp
+          path: frp
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '' && format('refs/tags/{0}', github.event.inputs.tag) || '' }}
       - name: set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
-          packages: 'build-tools;36.1.0'
+          packages: 'build-tools;37.0.0 ndk;30.0.14904198'
       - name: Add build-tools to PATH
-        run: echo "$ANDROID_HOME/build-tools/36.1.0" >> "$GITHUB_PATH"
+        run: echo "$ANDROID_HOME/build-tools/37.0.0" >> "$GITHUB_PATH"
+      - name: Grant execute permission for build script
+        run: chmod +x scripts/build_frp_binaries.sh
+      - name: Build frp binaries for Android
+        env:
+          NDK_ROOT: ${{ env.ANDROID_HOME }}/ndk/30.0.14904198
+          FRP_ROOT: ${{ github.workspace }}/frp
+          FRP_ANDROID_ROOT: ${{ github.workspace }}
+        run: ./scripts/build_frp_binaries.sh
 
       # https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#storing-base64-binary-blobs-as-secrets
       - name: Retrieve the secret and decode it to a file
@@ -50,14 +65,6 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Install runtime dependencies
-        run: |
-          # Ensure jq and tar are available for the frp download script
-          sudo apt-get update && sudo apt-get install -y jq tar
-      - name: Grant execute permission for update script
-        run: chmod +x scripts/update_frp_binaries.sh
-      - name: Update frp binaries
-        run: ./scripts/update_frp_binaries.sh ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '' && format('--tag {0}', github.event.inputs.tag) || '' }}
       - name: Build with Gradle
         run: ./gradlew assembleRelease
         env:
@@ -116,25 +123,25 @@ jobs:
           done
 
       - name: Upload arm64-v8a APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frp-Android-arm64-v8a
           path: app/build/outputs/renamed_apks/release/frp_arm64-v8a_*.apk
 
       - name: Upload armeabi-v7a APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frp-Android-armeabi-v7a
           path: app/build/outputs/renamed_apks/release/frp_armeabi-v7a_*.apk
 
       - name: Upload x86_64 APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frp-Android-x86_64
           path: app/build/outputs/renamed_apks/release/frp_x86_64_*.apk
 
       - name: Upload universal APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frp-Android-universal
           path: app/build/outputs/renamed_apks/release/frp_universal_*.apk
