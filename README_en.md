@@ -31,12 +31,12 @@ The content for ```STORE_FILE``` should be the base64 from step 2, while you sho
 ### Compiling via Android Studio
 
 1. (Optional) Create an APK signing key configuration file named ```keystore.properties``` at the root directory of the project, referencing the existing ```keystore.example.properties``` file at the same level.
-2. Refer to the [script instructions](./scripts/README.md) to run the `update_frp_binaries` script to obtain the latest frp kernel files, or manually download and place them in the appropriate directories.
+2. Refer to the [script instructions](./scripts/README.md) to run the `build_frp_binaries` script to compile frp from source (requires Go and Android NDK), or run the `update_frp_binaries` script to download prebuilt kernel files.
 3. Compile and package using Android Studio.
 
 ## FAQs
 ### Where does the frp kernel (libfrpc.so) of the project come from?
-It is obtained directly by extracting the corresponding ABI Linux version archive from [frp's release](https://github.com/fatedier/frp/releases), renaming frpc to libfrpc.so.  
+It is cross-compiled directly from the [frp](https://github.com/fatedier/frp) source code into Android native libraries using Go with the Android NDK toolchain (`GOOS=android`), supporting arm64-v8a, armeabi-v7a and x86_64 architectures.  
 The project does not invoke methods from the so file within its code but treats the so as an executable file, executing the corresponding command through shell.  
 Due to Golang's zero-dependency characteristic, the executable file can be run directly through shell in Android.
 
@@ -45,8 +45,10 @@ Add `loginFailExit = false` to the frpc configuration to prevent exiting after t
 This is useful in scenarios such as auto-start on boot, where the network may not be ready when frpc starts to connect and fails. Without this option, frpc will exit immediately after a failed attempt.
 
 ### DNS Resolution Failure
-Starting from v1.3.0, devices with the arm64-v8a architecture use the android type frp kernel to solve DNS resolution issues.  
-Devices with armeabi-v7a and x86_64 architectures still use the linux type frp kernel, which may have DNS resolution problems. It is recommended to specify a DNS server using the `dnsServer` option in the configuration file.
+All architectures now use frp kernels compiled with `GOOS=android`, effectively resolving DNS resolution issues. If you still encounter DNS problems, it is recommended to specify a DNS server using the `dnsServer` option in the configuration file.
+
+### Android 17 (API 37) Local Network Permission
+Android 17+ introduces the `ACCESS_LOCAL_NETWORK` permission requirement. Accessing local network resources requires explicit user consent. The onboarding wizard will prompt for this permission, and it can also be granted manually in system settings. Without this permission, frp cannot connect to devices on the local network.
 
 ### Start at Boot and Background Keep-Alive
 The app is designed according to the native Android specification. However, some custom Android systems have stricter background management. Please manually enable the relevant options in the system settings. For example, on ColorOS 16, the connection may be disconnected when the app is sent to the background. After enabling [App Settings -> Power Management -> Fully Allow Background Activity], it will work normally.
@@ -82,6 +84,7 @@ adb shell am broadcast -a io.github.acedroidx.frp.STOP  -e TYPE frpc -e NAME exa
 
 ### ContentProvider config access example
 Before using, turn on the "frp Config I/O" read/write switches in Settings and be aware of the possible disclosure of config passwords.
+When writing a new config via ContentProvider, Auto-start is enabled automatically for that config.
 
 ```shell
 # List all configs (requires "Allow read")

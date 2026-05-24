@@ -1,6 +1,29 @@
-# Update frp Binaries
+# frp Binaries Build & Update
 
-This script `update_frp_binaries.sh` fetches the latest release of [fatedier/frp](https://github.com/fatedier/frp) and extracts prebuilt `frpc`/`frps` executables for the following architectures:
+This directory provides two approaches to obtain frp binaries and place them into the Android project's `jniLibs` directory:
+
+## Method 1: Build from Source
+
+Script `build_frp_binaries.sh` uses Go cross-compilation to build Android native libraries directly from the [fatedier/frp](https://github.com/fatedier/frp) source code, leveraging the Android NDK Clang toolchain.
+
+Prerequisites
+- Go toolchain
+- Android NDK (set `NDK_ROOT` environment variable)
+- frp source code (set `FRP_ROOT` environment variable)
+- frp-Android source code (set `FRP_ANDROID_ROOT` environment variable)
+
+Linux Usage Examples:
+```
+# Set environment variables then run
+export NDK_ROOT=/path/to/android-ndk
+export FRP_ROOT=/path/to/frp/source
+export FRP_ANDROID_ROOT=/path/to/frp-Android
+./scripts/build_frp_binaries.sh
+```
+
+## Method 2: Download Prebuilt Binaries from Release
+
+Script `update_frp_binaries.sh` fetches the latest release of [fatedier/frp](https://github.com/fatedier/frp) and extracts prebuilt `frpc`/`frps` executables for the following architectures:
 
 - `android_arm64` -> `app/src/main/jniLibs/arm64-v8a/`
 - `linux_amd64`   -> `app/src/main/jniLibs/x86_64/`

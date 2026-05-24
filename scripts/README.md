@@ -1,6 +1,29 @@
-# 更新 frp 二进制文件
+# frp 二进制文件构建与更新
 
-此脚本 `update_frp_binaries.sh` 会获取 [fatedier/frp](https://github.com/fatedier/frp) 的最新 release（或使用指定的 tag），并从预编译的压缩包中提取 `frpc` / `frps` 可执行文件，放置到 Android 项目的 `jniLibs` 目录中，支持以下架构映射：
+本目录提供两种方式获取 frp 二进制文件，将其放置在 Android 项目的 `jniLibs` 目录中：
+
+## 方法一：从源代码编译
+
+脚本 `build_frp_binaries.sh` 使用 Go 交叉编译直接从 [fatedier/frp](https://github.com/fatedier/frp) 源代码构建 Android 原生库，利用 Android NDK 的 Clang 工具链实现跨平台编译。
+
+先决条件
+- Go 工具链
+- Android NDK（需设置 `NDK_ROOT` 环境变量）
+- frp 源代码（需设置 `FRP_ROOT` 环境变量）
+- frp-Android 源代码（需设置 `FRP_ANDROID_ROOT` 环境变量）
+
+Linux 使用示例
+```
+# 设置环境变量后执行
+export NDK_ROOT=/path/to/android/ndk/30.0.14904198
+export FRP_ROOT=/path/to/github/frp
+export FRP_ANDROID_ROOT=/path/to/github/frp-Android
+./scripts/build_frp_binaries.sh
+```
+
+## 方法二：从 Release 下载预编译文件
+
+脚本 `update_frp_binaries.sh` 会获取 [fatedier/frp](https://github.com/fatedier/frp) 的最新 release（或使用指定的 tag），并从预编译的压缩包中提取 `frpc` / `frps` 可执行文件，支持以下架构映射：
 
 - `android_arm64` -> `app/src/main/jniLibs/arm64-v8a/`
 - `linux_amd64`   -> `app/src/main/jniLibs/x86_64/`
