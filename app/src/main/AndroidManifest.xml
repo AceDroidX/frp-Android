@@ -69,6 +69,17 @@
                 android:value="explanation_for_special_use" />
         </service>
 
+        <service
+            android:name=".HttpProxyService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:stopWithTask="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Runs the user-enabled HTTP and HTTPS CONNECT proxy server" />
+        </service>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -87,6 +98,7 @@
             android:exported="true">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
 
                 <category android:name="android.intent.category.HOME" />
             </intent-filter>

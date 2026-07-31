@@ -10,7 +10,8 @@ class ShellThread(
     val envp: Map<String, String> = emptyMap(),
     val outputCallback: (text: String) -> Unit
 ) : Thread() {
-    private lateinit var process: Process
+    @Volatile
+    private var process: Process? = null
 
     override fun run() {
         try {
@@ -21,10 +22,11 @@ class ShellThread(
             }
             processBuilder.redirectErrorStream(true) // 合并错误流
 
-            process = processBuilder.start()
+            val runningProcess = processBuilder.start()
+            process = runningProcess
 
             // 处理输出流
-            process.inputStream.bufferedReader().use { reader ->
+            runningProcess.inputStream.bufferedReader().use { reader ->
                 try {
                     var line: String? = null
                     while (!isInterrupted && reader.readLine().also { line = it } != null) {
@@ -37,7 +39,7 @@ class ShellThread(
             }
 
             // 等待进程结束并读取退出码
-            val exitCode = process.waitFor()
+            val exitCode = runningProcess.waitFor()
             outputCallback("Process exited with code: $exitCode")
 
         } catch (e: Exception) {
@@ -49,11 +51,13 @@ class ShellThread(
     }
 
     fun stopProcess() {
+        // 进程创建失败时没有可清理的对象，直接返回，避免掩盖真正的启动异常。
+        val runningProcess = process ?: return
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                process.destroyForcibly()
+                runningProcess.destroyForcibly()
             } else {
-                process.destroy()
+                runningProcess.destroy()
             }
         } catch (e: Exception) {
             e.printStackTrace()

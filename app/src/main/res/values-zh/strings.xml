@@ -123,4 +123,12 @@
     <string name="backup_export_failed">备份导出失败：%1$s</string>
     <string name="backup_import_success">备份导入成功</string>
     <string name="backup_import_failed">备份导入失败：%1$s</string>
+    <string name="http_proxy_title">HTTP / HTTPS 代理</string>
+    <string name="http_proxy_switch">启用代理服务器</string>
+    <string name="http_proxy_endpoint">监听所有网络接口，端口 %1$d</string>
+    <string name="http_proxy_help">原生代理在端口 %1$d 接收 HTTP 请求和 HTTPS CONNECT 隧道。请在客户端中将 Android 设备 IP 和此端口设置为 HTTP 代理。\n\n同一网络中的设备均可访问此代理，且代理没有身份验证，因此请仅在可信网络中开启。HTTPS 流量仅进行端到端隧道转发，不会被解密。\n\n普通进程被杀后，Android 可重启此前台服务；设备重启后也会恢复。Android 不允许任何应用在被明确“强行停止”后继续运行，重新打开应用后方可恢复。</string>
+    <string name="http_proxy_notification_channel">HTTP 代理服务</string>
+    <string name="http_proxy_notification_channel_desc">保持原生 HTTP 和 HTTPS 代理运行</string>
+    <string name="http_proxy_notification_title">HTTP / HTTPS 代理正在运行</string>
+    <string name="http_proxy_notification_content">正在监听端口 %1$d</string>
 </resources>
