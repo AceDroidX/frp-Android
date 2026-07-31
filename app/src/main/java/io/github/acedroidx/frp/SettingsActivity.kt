@@ -81,6 +81,7 @@ class SettingsActivity : ComponentActivity() {
     private val hideServiceToast = MutableStateFlow(false)
     private val allowConfigRead = MutableStateFlow(false)
     private val allowConfigWrite = MutableStateFlow(false)
+    private val httpProxyEnabled = MutableStateFlow(false)
     private val quickTileConfig = MutableStateFlow<FrpConfig?>(null)
     private lateinit var preferences: SharedPreferences
 
@@ -187,11 +188,13 @@ class SettingsActivity : ComponentActivity() {
         val isHideServiceToast by hideServiceToast.collectAsStateWithLifecycle(false)
         val isConfigReadAllowed by allowConfigRead.collectAsStateWithLifecycle(false)
         val isConfigWriteAllowed by allowConfigWrite.collectAsStateWithLifecycle(false)
+        val isHttpProxyEnabled by httpProxyEnabled.collectAsStateWithLifecycle(false)
         val currentQuickTileConfig by quickTileConfig.collectAsStateWithLifecycle(null)
         val configs by allConfigs.collectAsStateWithLifecycle(emptyList())
 
         var showAutoStartHelp by remember { mutableStateOf(false) }
         var showConfigIoHelp by remember { mutableStateOf(false) }
+        var showHttpProxyHelp by remember { mutableStateOf(false) }
 
         val themeOptions = listOf(
             ThemeModeKeys.DARK to stringResource(R.string.theme_mode_dark),
@@ -211,6 +214,13 @@ class SettingsActivity : ComponentActivity() {
                 title = stringResource(R.string.config_io_title),
                 message = stringResource(R.string.config_io_help_message),
                 onDismiss = { showConfigIoHelp = false })
+        }
+
+        if (showHttpProxyHelp) {
+            HelpDialog(
+                title = stringResource(R.string.http_proxy_title),
+                message = stringResource(R.string.http_proxy_help, HttpProxyService.PORT),
+                onDismiss = { showHttpProxyHelp = false })
         }
 
         Column(
@@ -315,6 +325,55 @@ class SettingsActivity : ComponentActivity() {
                             hideServiceToast.value = checked
                         })
 
+                }
+            }
+
+            // Native HTTP/HTTPS CONNECT 代理。默认监听所有接口，便于本机和局域网客户端使用。
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(2.dp)) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.http_proxy_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.http_proxy_endpoint,
+                                    HttpProxyService.PORT
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { showHttpProxyHelp = true }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.help_24px),
+                                contentDescription = stringResource(R.string.content_desc_help)
+                            )
+                        }
+                    }
+                    HorizontalDivider()
+                    SettingItemWithSwitch(
+                        title = stringResource(R.string.http_proxy_switch),
+                        checked = isHttpProxyEnabled,
+                        onCheckedChange = { checked ->
+                            preferences.edit {
+                                putBoolean(PreferencesKey.HTTP_PROXY_ENABLED, checked)
+                            }
+                            httpProxyEnabled.value = checked
+                            if (checked) {
+                                HttpProxyService.start(this@SettingsActivity)
+                            } else {
+                                HttpProxyService.stop(this@SettingsActivity)
+                            }
+                        }
+                    )
                 }
             }
 
@@ -731,6 +790,8 @@ class SettingsActivity : ComponentActivity() {
         hideServiceToast.value = preferences.getBoolean(PreferencesKey.HIDE_SERVICE_TOAST, false)
         allowConfigRead.value = preferences.getBoolean(PreferencesKey.ALLOW_CONFIG_READ, false)
         allowConfigWrite.value = preferences.getBoolean(PreferencesKey.ALLOW_CONFIG_WRITE, false)
+        httpProxyEnabled.value =
+            preferences.getBoolean(PreferencesKey.HTTP_PROXY_ENABLED, false)
 
         // 读取快捷开关配置
         loadQuickTileConfig()
@@ -770,7 +831,7 @@ class SettingsActivity : ComponentActivity() {
                         zipOut
                     )
 
-                    val prefsFile = File(dataDir, "shared_prefs/data.xml")
+                    val prefsFile = File(applicationInfo.dataDir, "shared_prefs/data.xml")
                     if (prefsFile.exists()) {
                         appendFileToZip(prefsFile, "shared_prefs/data.xml", zipOut)
                     }
@@ -802,10 +863,13 @@ class SettingsActivity : ComponentActivity() {
                                 }
 
                                 rawName == "shared_prefs/data.xml" -> {
-                                    val prefsDir = File(dataDir, "shared_prefs")
+                                    val prefsDir = File(applicationInfo.dataDir, "shared_prefs")
                                     prefsDir.mkdirs()
                                     val target = File(prefsDir, "data.xml")
-                                    ensureInsideDir(target, prefsDir.parentFile ?: dataDir)
+                                    ensureInsideDir(
+                                        target,
+                                        prefsDir.parentFile ?: File(applicationInfo.dataDir)
+                                    )
                                     FileOutputStream(target).use { output ->
                                         zipIn.copyTo(output)
                                     }

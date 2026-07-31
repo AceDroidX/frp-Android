@@ -9,7 +9,12 @@ class AutoStartBroadReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val preferences = context.getSharedPreferences("data", Context.MODE_PRIVATE)
         when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED -> {
+            Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> {
+                // 代理开关独立于 frp 配置；升级或重启后恢复用户明确开启的代理服务。
+                if (preferences.getBoolean(PreferencesKey.HTTP_PROXY_ENABLED, false)) {
+                    HttpProxyService.start(context)
+                }
+
                 val autoStartOnBoot = preferences.getBoolean(PreferencesKey.AUTO_START, false)
                 if (!autoStartOnBoot) return
                 val configList = AutoStartHelper.loadAutoStartConfigs(context)

@@ -18,4 +18,5 @@ object PreferencesKey {
     const val QUICK_TILE_CONFIG_TYPE = "quick_tile_config_type"
     const val QUICK_TILE_CONFIG_NAME = "quick_tile_config_name"
     const val FIRST_LAUNCH_DONE = "first_launch_done"
+    const val HTTP_PROXY_ENABLED = "http_proxy_enabled"
 }

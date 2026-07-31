@@ -124,4 +124,12 @@
     <string name="backup_export_failed">Backup export failed: %1$s</string>
     <string name="backup_import_success">Backup imported</string>
     <string name="backup_import_failed">Backup import failed: %1$s</string>
+    <string name="http_proxy_title">HTTP / HTTPS Proxy</string>
+    <string name="http_proxy_switch">Enable proxy server</string>
+    <string name="http_proxy_endpoint">Listening on all interfaces, port %1$d</string>
+    <string name="http_proxy_help">This native proxy accepts HTTP requests and HTTPS CONNECT tunnels on port %1$d. Set the Android device IP and this port as the HTTP proxy on a client.\n\nThe proxy is available to devices on the same network and has no authentication, so only enable it on trusted networks. HTTPS traffic is tunneled end-to-end and is not decrypted.\n\nAndroid can restart the foreground service after an ordinary process kill and after reboot. Android does not allow any app to run after an explicit Force stop until the app is opened again.</string>
+    <string name="http_proxy_notification_channel">HTTP proxy service</string>
+    <string name="http_proxy_notification_channel_desc">Keeps the native HTTP and HTTPS proxy running</string>
+    <string name="http_proxy_notification_title">HTTP / HTTPS proxy is running</string>
+    <string name="http_proxy_notification_content">Listening on port %1$d</string>
 </resources>

@@ -135,6 +135,12 @@ android {
         buildConfigField("String", "FrpsFileName", "\"libfrps.so\"")
         buildConfigField("String", "FrpcConfigFileName", "\"frpc.toml\"")
         buildConfigField("String", "FrpsConfigFileName", "\"frps.toml\"")
+
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++20", "-Wall", "-Wextra")
+            }
+        }
     }
 
     buildTypes {
@@ -173,6 +179,12 @@ android {
         }
     }
     namespace = "io.github.acedroidx.frp"
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
+    }
 
 }
 

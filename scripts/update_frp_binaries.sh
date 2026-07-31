@@ -68,29 +68,29 @@ fi
 
 log "Fetching release info from GitHub: ${API_URL}"
 
-AUTH_ARGS=()
-if [[ -n "$GITHUB_TOKEN" ]]; then
-  AUTH_ARGS=( -H "Authorization: token ${GITHUB_TOKEN}" )
-fi
-
 if [[ $DRY_RUN -eq 1 ]]; then
   log "DRY RUN: will not perform downloads or write files. Showing intended behavior..."
 fi
 
 # Get release JSON
-# Fetch release JSON (fail hard if GitHub returns an error)
-if ! release_json=$(curl -sSL --fail "${API_URL}" -H "Accept: application/vnd.github.v3+json" "${AUTH_ARGS[@]}" ); then
+# Fetch release JSON (fail hard if GitHub returns an error).
+# macOS 自带的 Bash 3.2 在 set -u 下展开空数组会报错，因此分别处理有无 token 的情况。
+if [[ -n "$GITHUB_TOKEN" ]]; then
+  release_json=$(curl -sSL --fail "${API_URL}" \
+    -H "Accept: application/vnd.github.v3+json" \
+    -H "Authorization: token ${GITHUB_TOKEN}") || {
+      err "Failed to fetch release info from GitHub (${API_URL})"; exit 3;
+    }
+elif ! release_json=$(curl -sSL --fail "${API_URL}" -H "Accept: application/vnd.github.v3+json"); then
   err "Failed to fetch release info from GitHub (${API_URL})"; exit 3
 fi
 if [[ -z "${release_json}" || "${release_json}" == "null" ]]; then
   err "Release info is empty or null from GitHub"; exit 3
 fi
 
-# Architecture mapping
-declare -A ARCH_MAP
-ARCH_MAP["arm64-v8a"]="android_arm64"
-ARCH_MAP["x86_64"]="linux_amd64"
-ARCH_MAP["armeabi-v7a"]="linux_arm"
+# Architecture mapping。使用并行索引数组以兼容 macOS 自带的 Bash 3.2。
+ABI_DIRS=("arm64-v8a" "x86_64" "armeabi-v7a")
+ARCH_MAPPINGS=("android_arm64" "linux_amd64" "linux_arm")
 
 # Make DEST_BASE if not exists
 if [[ $DRY_RUN -eq 0 && ! -d ${DEST_BASE} ]]; then
@@ -238,8 +238,9 @@ process_asset() {
 }
 
 # Process each ARCH
-for abi in "${!ARCH_MAP[@]}"; do
-  mapping=${ARCH_MAP[$abi]}
+for ((arch_index = 0; arch_index < ${#ABI_DIRS[@]}; arch_index++)); do
+  abi=${ABI_DIRS[$arch_index]}
+  mapping=${ARCH_MAPPINGS[$arch_index]}
   # For linux arm, accept both linux_arm and linux_arm_hf (hf = hardware float) in matching
   if [[ "$mapping" == "linux_arm" ]]; then
     # 优先尝试 linux_arm_hf，其次退回 linux_arm
